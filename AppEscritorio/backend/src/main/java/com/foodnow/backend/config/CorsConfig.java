@@ -13,10 +13,10 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**") // Permitir todas las rutas de la API
-                        .allowedOrigins("*") // Permitir acceso desde CUALQUIER lugar (Vue, React, Móvil...)
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Permitir todos los verbos HTTP
-                        .allowedHeaders("*");
+                // Permitimos el acceso desde el entorno de desarrollo de Vite/Electron
+                registry.addMapping("/**")
+                        .allowedOrigins("http://localhost:5173")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
             }
         };
     }

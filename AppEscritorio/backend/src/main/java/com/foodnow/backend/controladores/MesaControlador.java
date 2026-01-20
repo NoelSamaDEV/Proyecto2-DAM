@@ -7,35 +7,54 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/mesas")
-@CrossOrigin(origins = "http://localhost:5173") // Permite Vue
+@CrossOrigin(origins = "http://localhost:5173")
 public class MesaControlador {
 
     @Autowired
     private MesaGestor mesaGestor;
 
+    // 1. GET (TODAS): Listar todas las mesas
     @GetMapping
-    public List<Mesa> obtenerMesas() {
+    public List<Mesa> listarMesas() {
         return mesaGestor.obtenerTodas();
     }
 
+    // --- ¡ESTA ES LA FUNCIÓN NUEVA QUE FALTABA! ---
+    // 2. GET (UNA): Obtener una mesa específica por su ID
     @GetMapping("/{id}")
-    public ResponseEntity<Mesa> obtenerMesa(@PathVariable Integer id) {
-        return mesaGestor.obtenerPorId(id)
-                .map(mesa -> ResponseEntity.ok(mesa))
-                .orElse(ResponseEntity.notFound().build());
-    }
+    public ResponseEntity<Mesa> obtenerMesaPorId(@PathVariable Integer id) {
+        Optional<Mesa> posibleMesa = mesaGestor.obtenerPorId(id);
 
+        // Si la encuentra, la devuelve. Si no, devuelve error 404.
+        return posibleMesa.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+    // ---------------------------------------------
+
+    // 3. POST: Guardar mesa
     @PostMapping
-    public Mesa crearMesaAutomatica() {
-        return mesaGestor.crearMesaAutomatica();
+    public Mesa guardarMesa(@RequestBody Mesa mesa) {
+        // Nos aseguramos de que el estado sea mayúsculas por coherencia
+        if (mesa.getEstado() != null) {
+            mesa.setEstado(mesa.getEstado().toUpperCase());
+        }
+        return mesaGestor.guardarMesa(mesa);
     }
 
-    // ESTE ES EL MÉTODO QUE NECESITAS PARA EL BOTÓN DE BORRAR
+    // 4. DELETE: Borrar mesa
     @DeleteMapping("/{id}")
-    public void borrarMesa(@PathVariable Integer id) {
-        mesaGestor.borrarMesa(id);
+    public ResponseEntity<Void> borrarMesa(@PathVariable Integer id) {
+        Optional<Mesa> posibleMesa = mesaGestor.obtenerPorId(id);
+
+        if (posibleMesa.isPresent()) {
+            mesaGestor.borrarMesa(id);
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }
