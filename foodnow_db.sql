@@ -65,3 +65,9 @@ CREATE TABLE linea_pedido (
 -- Restaurante de prueba para empezar
 INSERT INTO restaurante (nombre, direccion, telefono, email) 
 VALUES ('Restaurante FoodNow Demo', 'Calle Principal 1', '600123456', 'contacto@foodnow.com');
+
+-- Insertamos 4 mesas de prueba vinculadas al restaurante 1
+INSERT INTO mesa (numero_mesa, estado, qr_code, id_restaurante) VALUES (1, 'LIBRE', 'QR_MESA_1', 1);
+INSERT INTO mesa (numero_mesa, estado, qr_code, id_restaurante) VALUES (2, 'OCUPADA', 'QR_MESA_2', 1);
+INSERT INTO mesa (numero_mesa, estado, qr_code, id_restaurante) VALUES (3, 'PIDIENDO_CUENTA', 'QR_MESA_3', 1);
+INSERT INTO mesa (numero_mesa, estado, qr_code, id_restaurante) VALUES (4, 'LIBRE', 'QR_MESA_4', 1);
