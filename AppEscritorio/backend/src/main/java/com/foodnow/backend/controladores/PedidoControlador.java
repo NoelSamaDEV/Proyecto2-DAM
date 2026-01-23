@@ -1,89 +1,143 @@
 package com.foodnow.backend.controladores;
 
-import com.foodnow.backend.modelos.*;
+import com.foodnow.backend.entidades.*;
 import com.foodnow.backend.repositorios.*;
+import com.foodnow.backend.interfaces.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/pedidos")
-@CrossOrigin(origins = "*") // Permite que Vue se conecte
+@CrossOrigin(origins = "*")
 public class PedidoControlador {
 
     @Autowired private PedidoRepositorio pedidoRepo;
-    @Autowired private MesaRepositorio mesaRepo;
-    @Autowired private ProductoRepositorio productoRepo;
+    @Autowired private MesaInterfaz mesaRepo;
+    @Autowired private ProductoInterfaz productoRepo;
     @Autowired private LineaPedidoRepositorio lineaRepo;
 
-    // 1. VER EL PEDIDO ACTUAL
+    // --- NUEVO: ENDPOINT PARA VER PEDIDOS PENDIENTES (NOTIFICACIONES) ---
+    @GetMapping("/pendientes")
+    public ResponseEntity<List<Pedido>> obtenerPedidosPendientes() {
+        // 1. Buscamos TODOS los pedidos
+        List<Pedido> todos = pedidoRepo.findAll();
+        List<Pedido> pendientes = new ArrayList<>();
+
+        // 2. Filtramos solo los que estén "ABIERTO"
+        for (Pedido p : todos) {
+            if ("ABIERTO".equals(p.getEstado())) {
+                // Truco: Recalcular total antes de enviarlo
+                BigDecimal totalReal = lineaRepo.calcularTotalPedido(p.getIdPedido());
+                p.setTotal(totalReal);
+                pendientes.add(p);
+            }
+        }
+        return ResponseEntity.ok(pendientes);
+    }
+    // ---------------------------------------------------------------------
+
     @GetMapping("/mesa/{idMesa}/actual")
     public ResponseEntity<Pedido> obtenerPedidoActual(@PathVariable Integer idMesa) {
-        Optional<Pedido> pedido = pedidoRepo.findByMesa_IdMesaAndEstado(idMesa, "ABIERTO");
-        if (pedido.isPresent()) {
-            return ResponseEntity.ok(pedido.get());
+        Optional<Pedido> pedidoOpt = pedidoRepo.findByMesa_IdMesaAndEstado(idMesa, "ABIERTO");
+        if (pedidoOpt.isPresent()) {
+            Pedido pedido = pedidoOpt.get();
+            BigDecimal totalReal = lineaRepo.calcularTotalPedido(pedido.getIdPedido());
+            if (pedido.getTotal().compareTo(totalReal) != 0) {
+                pedido.setTotal(totalReal);
+                pedidoRepo.save(pedido);
+            }
+            return ResponseEntity.ok(pedido);
         }
         return ResponseEntity.notFound().build();
     }
 
-    // 2. AÑADIR PRODUCTO (SUMAR A LO QUE YA HAY)
     @PostMapping("/mesa/{idMesa}/agregar")
-    public ResponseEntity<Pedido> agregarProducto(
+    public ResponseEntity<Map<String, Object>> agregarProducto(
             @PathVariable Integer idMesa,
             @RequestBody SolicitudProducto solicitud) {
 
-        // A. Buscamos la mesa
-        Optional<Mesa> m = mesaRepo.findById(idMesa);
-        if (!m.isPresent()) return ResponseEntity.notFound().build();
-        Mesa mesa = m.get();
+        Map<String, Object> respuesta = new HashMap<>();
+        Mesa mesa = mesaRepo.findById(idMesa).orElse(null);
+        if (mesa == null) return ResponseEntity.notFound().build();
 
-        // B. Buscamos si ya hay un pedido ABIERTO. Si no, creamos uno nuevo.
+        if (!"OCUPADA".equals(mesa.getEstado())) {
+            Optional<Pedido> pedidoZombie = pedidoRepo.findByMesa_IdMesaAndEstado(idMesa, "ABIERTO");
+            if (pedidoZombie.isPresent()) {
+                Pedido viejo = pedidoZombie.get();
+                viejo.setEstado("CERRADO");
+                pedidoRepo.saveAndFlush(viejo);
+            }
+            mesaRepo.forzarEstadoOcupada(idMesa);
+            mesa.setEstado("OCUPADA");
+            respuesta.put("mensaje", "Mesa abierta y pedido iniciado.");
+        } else {
+            respuesta.put("mensaje", "Producto sumado al pedido.");
+        }
+
         Pedido pedido = pedidoRepo.findByMesa_IdMesaAndEstado(idMesa, "ABIERTO")
                 .orElseGet(() -> {
                     Pedido p = new Pedido();
                     p.setMesa(mesa);
                     p.setEstado("ABIERTO");
+                    p.setFecha(LocalDateTime.now());
                     p.setTotal(BigDecimal.ZERO);
-
-                    // Si creamos pedido, nos aseguramos de que la mesa esté OCUPADA
-                    mesa.setEstado("OCUPADA");
-                    mesaRepo.save(mesa);
-
-                    return pedidoRepo.save(p);
+                    p.setLineasPedido(new ArrayList<>());
+                    return pedidoRepo.saveAndFlush(p);
                 });
 
-        // C. Buscamos el producto que quieren añadir (Hamburguesa, Coca-Cola...)
-        Optional<Producto> prod = productoRepo.findById(solicitud.idProducto);
-        if (prod.isPresent()) {
-            Producto producto = prod.get();
+        Producto producto = productoRepo.findById(solicitud.idProducto).orElse(null);
+        if (producto != null) {
+            Optional<LineaPedido> lineaExistente = lineaRepo.findByPedido_IdPedidoAndProducto_IdProducto(
+                    pedido.getIdPedido(), producto.getIdProducto());
 
-            // D. Creamos la línea de pedido nueva
-            LineaPedido linea = new LineaPedido();
-            linea.setPedido(pedido);
-            linea.setProducto(producto);
-            linea.setCantidad(solicitud.cantidad);
-            linea.setPrecioUnidad(producto.getPrecio());
+            if (lineaExistente.isPresent()) {
+                LineaPedido linea = lineaExistente.get();
+                int nuevaCantidad = linea.getCantidad() + solicitud.cantidad;
+                linea.setCantidad(nuevaCantidad);
+                linea.setSubtotal(producto.getPrecio().multiply(new BigDecimal(nuevaCantidad)));
+                lineaRepo.saveAndFlush(linea);
+            } else {
+                LineaPedido nueva = new LineaPedido();
+                nueva.setPedido(pedido);
+                nueva.setProducto(producto);
+                nueva.setCantidad(solicitud.cantidad);
+                nueva.setPrecioUnidad(producto.getPrecio());
+                nueva.setSubtotal(producto.getPrecio().multiply(new BigDecimal(solicitud.cantidad)));
+                lineaRepo.saveAndFlush(nueva);
+            }
 
-            // Calculamos: precio x cantidad
-            BigDecimal subtotal = producto.getPrecio().multiply(new BigDecimal(solicitud.cantidad));
-            linea.setSubtotal(subtotal);
+            BigDecimal totalCalculado = lineaRepo.calcularTotalPedido(pedido.getIdPedido());
+            pedido.setTotal(totalCalculado);
+            pedidoRepo.saveAndFlush(pedido);
 
-            // Guardamos la línea
-            lineaRepo.save(linea);
-
-            // E. SUMAMOS AL TOTAL DEL PEDIDO
-            BigDecimal totalActualizado = pedido.getTotal().add(subtotal);
-            pedido.setTotal(totalActualizado);
-
-            return ResponseEntity.ok(pedidoRepo.save(pedido));
+            Pedido pedidoFinal = pedidoRepo.findById(pedido.getIdPedido()).get();
+            respuesta.put("pedido", pedidoFinal);
+            respuesta.put("status", "success");
+            return ResponseEntity.ok(respuesta);
         }
-
         return ResponseEntity.badRequest().build();
     }
 
-    // CLASE INTERNA PARA RECIBIR LOS DATOS DEL JSON
+    @PostMapping("/mesa/{idMesa}/cerrar")
+    public ResponseEntity<?> cerrarMesa(@PathVariable Integer idMesa) {
+        Optional<Pedido> pedidoOpt = pedidoRepo.findByMesa_IdMesaAndEstado(idMesa, "ABIERTO");
+        if (pedidoOpt.isPresent()) {
+            Pedido p = pedidoOpt.get();
+            p.setEstado("CERRADO");
+            pedidoRepo.save(p);
+        }
+        mesaRepo.forzarEstadoLibre(idMesa);
+        return ResponseEntity.ok().build();
+    }
+
     public static class SolicitudProducto {
         public Integer idProducto;
         public Integer cantidad;

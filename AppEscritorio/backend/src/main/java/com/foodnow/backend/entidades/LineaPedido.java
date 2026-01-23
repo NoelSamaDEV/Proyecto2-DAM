@@ -1,6 +1,6 @@
 package com.foodnow.backend.entidades;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
@@ -20,18 +20,16 @@ public class LineaPedido {
 
     private BigDecimal subtotal;
 
-    // --- ESTA PARTE ES CRITICA ---
     @ManyToOne
     @JoinColumn(name = "id_pedido")
-    @JsonBackReference // <--- ESTO EVITA QUE SE ROMPA LA LISTA
+    @JsonIgnoreProperties("lineasPedido") // Evita bucle infinito
     private Pedido pedido;
-    // -----------------------------
 
     @ManyToOne
     @JoinColumn(name = "id_producto")
     private Producto producto;
 
-    // Getters y Setters
+    // GETTERS Y SETTERS
     public Integer getIdLinea() { return idLinea; }
     public void setIdLinea(Integer idLinea) { this.idLinea = idLinea; }
 

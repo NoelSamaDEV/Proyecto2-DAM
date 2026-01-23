@@ -1,9 +1,10 @@
 package com.foodnow.backend.entidades;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -23,14 +24,12 @@ public class Pedido {
     @JoinColumn(name = "id_mesa")
     private Mesa mesa;
 
-    // --- ESTA ES LA CLAVE DEL PROBLEMA ---
-    // Si falta 'fetch = FetchType.EAGER', Java no carga la comida.
+    // IMPORTANTE: EAGER para cargar siempre y ArrayList para no tener nulos
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JsonManagedReference
-    private List<LineaPedido> lineasPedido;
-    // -------------------------------------
+    @JsonIgnoreProperties("pedido")
+    private List<LineaPedido> lineasPedido = new ArrayList<>();
 
-    // Getters y Setters
+    // GETTERS Y SETTERS
     public Integer getIdPedido() { return idPedido; }
     public void setIdPedido(Integer idPedido) { this.idPedido = idPedido; }
 

@@ -104,3 +104,9 @@ SET SQL_SAFE_UPDATES = 1;
 
 -- Verificación visual: Tienen que salir 2 filas
 SELECT * FROM linea_pedido;
+
+SET FOREIGN_KEY_CHECKS = 0;
+SET SQL_SAFE_UPDATES = 0;
+
+UPDATE mesa SET estado = 'AYUDA' WHERE numero_mesa = 1;
+UPDATE mesa SET estado = 'PIDIENDO_CUENTA' WHERE numero_mesa = 2;
