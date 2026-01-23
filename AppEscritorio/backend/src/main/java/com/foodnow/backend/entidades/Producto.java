@@ -1,9 +1,8 @@
 package com.foodnow.backend.entidades;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import java.math.BigDecimal;
 
-@Data
 @Entity
 @Table(name = "producto")
 public class Producto {
@@ -13,22 +12,20 @@ public class Producto {
     @Column(name = "id_producto")
     private Integer idProducto;
 
-    @Column(name = "nombre")
     private String nombre;
+    private BigDecimal precio;
+    private String imagen;
 
-    @Column(name = "precio")
-    private Double precio; // Uso Double para representar precios con decimales
+    // Getters y Setters
+    public Integer getIdProducto() { return idProducto; }
+    public void setIdProducto(Integer idProducto) { this.idProducto = idProducto; }
 
-    @Column(name = "imagen")
-    private String imagen; // Aquí se guarda la URL o nombre del archivo
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
 
-    // RELACIÓN 1: Un producto es de un restaurante
-    @ManyToOne
-    @JoinColumn(name = "id_restaurante")
-    private Restaurante restaurante;
+    public BigDecimal getPrecio() { return precio; }
+    public void setPrecio(BigDecimal precio) { this.precio = precio; }
 
-    // RELACIÓN 2: Un producto pertenece a una categoría
-    @ManyToOne
-    @JoinColumn(name = "id_categoria")
-    private Categoria categoria;
+    public String getImagen() { return imagen; }
+    public void setImagen(String imagen) { this.imagen = imagen; }
 }

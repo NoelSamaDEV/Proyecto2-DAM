@@ -1,10 +1,11 @@
 package com.foodnow.backend.entidades;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
-@Data
 @Entity
 @Table(name = "pedido")
 public class Pedido {
@@ -14,17 +15,37 @@ public class Pedido {
     @Column(name = "id_pedido")
     private Integer idPedido;
 
-    @Column(name = "fecha")
-    private LocalDateTime fecha; // Guarda fecha y hora automáticamente
+    private LocalDateTime fecha;
+    private String estado;
+    private BigDecimal total;
 
-    @Column(name = "estado")
-    private String estado; // "ABIERTO", "CERRADO", "PAGADO"
-
-    @Column(name = "total")
-    private Double total;
-
-    // RELACIÓN: Muchos pedidos se hacen en una mesa
     @ManyToOne
     @JoinColumn(name = "id_mesa")
     private Mesa mesa;
+
+    // --- ESTA ES LA CLAVE DEL PROBLEMA ---
+    // Si falta 'fetch = FetchType.EAGER', Java no carga la comida.
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonManagedReference
+    private List<LineaPedido> lineasPedido;
+    // -------------------------------------
+
+    // Getters y Setters
+    public Integer getIdPedido() { return idPedido; }
+    public void setIdPedido(Integer idPedido) { this.idPedido = idPedido; }
+
+    public LocalDateTime getFecha() { return fecha; }
+    public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
+
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
+
+    public BigDecimal getTotal() { return total; }
+    public void setTotal(BigDecimal total) { this.total = total; }
+
+    public Mesa getMesa() { return mesa; }
+    public void setMesa(Mesa mesa) { this.mesa = mesa; }
+
+    public List<LineaPedido> getLineasPedido() { return lineasPedido; }
+    public void setLineasPedido(List<LineaPedido> lineasPedido) { this.lineasPedido = lineasPedido; }
 }

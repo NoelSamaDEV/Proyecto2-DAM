@@ -1,9 +1,9 @@
 package com.foodnow.backend.entidades;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import lombok.Data;
+import java.math.BigDecimal;
 
-@Data
 @Entity
 @Table(name = "linea_pedido")
 public class LineaPedido {
@@ -13,22 +13,40 @@ public class LineaPedido {
     @Column(name = "id_linea")
     private Integer idLinea;
 
-    @Column(name = "cantidad")
     private Integer cantidad;
 
     @Column(name = "precio_unidad")
-    private Double precioUnidad;
+    private BigDecimal precioUnidad;
 
-    @Column(name = "subtotal")
-    private Double subtotal; // cantidad * precioUnidad
+    private BigDecimal subtotal;
 
-    // RELACIÓN 1: Pertenece a un pedido general
+    // --- ESTA PARTE ES CRITICA ---
     @ManyToOne
     @JoinColumn(name = "id_pedido")
+    @JsonBackReference // <--- ESTO EVITA QUE SE ROMPA LA LISTA
     private Pedido pedido;
+    // -----------------------------
 
-    // RELACIÓN 2: Se refiere a un producto concreto
     @ManyToOne
     @JoinColumn(name = "id_producto")
     private Producto producto;
+
+    // Getters y Setters
+    public Integer getIdLinea() { return idLinea; }
+    public void setIdLinea(Integer idLinea) { this.idLinea = idLinea; }
+
+    public Integer getCantidad() { return cantidad; }
+    public void setCantidad(Integer cantidad) { this.cantidad = cantidad; }
+
+    public BigDecimal getPrecioUnidad() { return precioUnidad; }
+    public void setPrecioUnidad(BigDecimal precioUnidad) { this.precioUnidad = precioUnidad; }
+
+    public BigDecimal getSubtotal() { return subtotal; }
+    public void setSubtotal(BigDecimal subtotal) { this.subtotal = subtotal; }
+
+    public Pedido getPedido() { return pedido; }
+    public void setPedido(Pedido pedido) { this.pedido = pedido; }
+
+    public Producto getProducto() { return producto; }
+    public void setProducto(Producto producto) { this.producto = producto; }
 }
