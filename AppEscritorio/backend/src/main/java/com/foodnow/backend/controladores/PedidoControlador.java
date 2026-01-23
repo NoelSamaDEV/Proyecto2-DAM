@@ -24,17 +24,17 @@ public class PedidoControlador {
     @Autowired private ProductoInterfaz productoRepo;
     @Autowired private LineaPedidoRepositorio lineaRepo;
 
-    // --- NUEVO: ENDPOINT PARA VER PEDIDOS PENDIENTES (NOTIFICACIONES) ---
+    // --- ENDPOINT DE NOTIFICACIONES (POLLING) ---
+    // Este método devuelve SOLO los pedidos que están ABIERTOS.
+    // La app de escritorio llamará aquí cada 3 segundos.
     @GetMapping("/pendientes")
     public ResponseEntity<List<Pedido>> obtenerPedidosPendientes() {
-        // 1. Buscamos TODOS los pedidos
         List<Pedido> todos = pedidoRepo.findAll();
         List<Pedido> pendientes = new ArrayList<>();
 
-        // 2. Filtramos solo los que estén "ABIERTO"
         for (Pedido p : todos) {
             if ("ABIERTO".equals(p.getEstado())) {
-                // Truco: Recalcular total antes de enviarlo
+                // Truco de seguridad: Recalculamos el total real antes de enviarlo
                 BigDecimal totalReal = lineaRepo.calcularTotalPedido(p.getIdPedido());
                 p.setTotal(totalReal);
                 pendientes.add(p);
@@ -42,7 +42,7 @@ public class PedidoControlador {
         }
         return ResponseEntity.ok(pendientes);
     }
-    // ---------------------------------------------------------------------
+    // ---------------------------------------------
 
     @GetMapping("/mesa/{idMesa}/actual")
     public ResponseEntity<Pedido> obtenerPedidoActual(@PathVariable Integer idMesa) {
@@ -50,6 +50,7 @@ public class PedidoControlador {
         if (pedidoOpt.isPresent()) {
             Pedido pedido = pedidoOpt.get();
             BigDecimal totalReal = lineaRepo.calcularTotalPedido(pedido.getIdPedido());
+            // Si hay discrepancia, corregimos en BD
             if (pedido.getTotal().compareTo(totalReal) != 0) {
                 pedido.setTotal(totalReal);
                 pedidoRepo.save(pedido);
@@ -68,13 +69,16 @@ public class PedidoControlador {
         Mesa mesa = mesaRepo.findById(idMesa).orElse(null);
         if (mesa == null) return ResponseEntity.notFound().build();
 
+        // LOGICA DE "FUERZA BRUTA" PARA EL ESTADO
         if (!"OCUPADA".equals(mesa.getEstado())) {
+            // Si parecía libre, limpiamos pedidos zombies anteriores
             Optional<Pedido> pedidoZombie = pedidoRepo.findByMesa_IdMesaAndEstado(idMesa, "ABIERTO");
             if (pedidoZombie.isPresent()) {
                 Pedido viejo = pedidoZombie.get();
                 viejo.setEstado("CERRADO");
                 pedidoRepo.saveAndFlush(viejo);
             }
+            // Forzamos estado OCUPADA
             mesaRepo.forzarEstadoOcupada(idMesa);
             mesa.setEstado("OCUPADA");
             respuesta.put("mensaje", "Mesa abierta y pedido iniciado.");
@@ -82,6 +86,7 @@ public class PedidoControlador {
             respuesta.put("mensaje", "Producto sumado al pedido.");
         }
 
+        // Obtener o crear pedido
         Pedido pedido = pedidoRepo.findByMesa_IdMesaAndEstado(idMesa, "ABIERTO")
                 .orElseGet(() -> {
                     Pedido p = new Pedido();
@@ -93,6 +98,7 @@ public class PedidoControlador {
                     return pedidoRepo.saveAndFlush(p);
                 });
 
+        // Añadir producto
         Producto producto = productoRepo.findById(solicitud.idProducto).orElse(null);
         if (producto != null) {
             Optional<LineaPedido> lineaExistente = lineaRepo.findByPedido_IdPedidoAndProducto_IdProducto(
@@ -114,6 +120,7 @@ public class PedidoControlador {
                 lineaRepo.saveAndFlush(nueva);
             }
 
+            // Recalcular total final y devolver
             BigDecimal totalCalculado = lineaRepo.calcularTotalPedido(pedido.getIdPedido());
             pedido.setTotal(totalCalculado);
             pedidoRepo.saveAndFlush(pedido);

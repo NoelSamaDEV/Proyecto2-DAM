@@ -1,12 +1,14 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
+// Importamos tu logo local
+import logo from '@/assets/logo.png'
 </script>
 
 <template>
   <div class="app-layout">
     <aside class="sidebar">
       <div class="logo-area">
-        <img src="https://cdn-icons-png.flaticon.com/512/3418/3418139.png" alt="Logo" class="logo-img"/>
+        <img :src="logo" alt="Logo" class="logo-img"/>
         <h2>FOODNOW</h2>
       </div>
 
@@ -28,7 +30,7 @@ body { margin: 0; padding: 0; font-family: 'Arial', sans-serif; background-color
 
 .app-layout {
   display: flex;
-  height: 100vh; /* Ocupa toda la altura de la pantalla */
+  height: 100vh;
   width: 100vw;
 }
 
@@ -50,7 +52,14 @@ body { margin: 0; padding: 0; font-family: 'Arial', sans-serif; background-color
   padding-bottom: 20px;
 }
 
-.logo-img { width: 60px; filter: invert(1); } /* Icono blanco */
+/* --- LOGO MUCHO MÁS GRANDE --- */
+.logo-img { 
+  width: 140px; /* Aumentado de 60px a 140px */
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto 10px auto; /* Centrado */
+} 
 
 .nav-btn {
   display: block;
@@ -68,7 +77,7 @@ body { margin: 0; padding: 0; font-family: 'Arial', sans-serif; background-color
 
 .nav-btn:hover, .router-link-active {
   background-color: #1a2f20;
-  border: 1px solid #CCA300; /* Borde Amarillo FoodNow */
+  border: 1px solid #CCA300; /* Borde Amarillo */
   color: #CCA300;
 }
 

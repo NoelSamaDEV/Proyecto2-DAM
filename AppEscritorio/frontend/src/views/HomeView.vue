@@ -1,157 +1,174 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const mesas = ref([])
+let intervalo = null
 
-// 1. Cargar mesas existentes (GET)
+// --- CARGAR MESAS ---
 const cargarMesas = async () => {
   try {
-    const respuesta = await fetch('http://localhost:8080/api/mesas')
-    if (respuesta.ok) {
-      mesas.value = await respuesta.json()
-    } else {
-      console.error("Error al cargar mesas")
+    const res = await fetch('http://localhost:8080/api/mesas')
+    if (res.ok) {
+      mesas.value = await res.json()
     }
   } catch (error) {
-    console.error("Error de conexión:", error)
+    console.error(error)
   }
 }
 
-// 2. Crear una mesa nueva automática (POST)
-const crearNuevaMesa = async () => {
+// --- CREAR NUEVA MESA ---
+const crearMesa = async () => {
+  // Pedimos el número al usuario de forma sencilla
+  const numero = prompt("Introduce el NÚMERO de la nueva mesa:")
+  
+  // Si cancela o no escribe nada, paramos
+  if (!numero) return
+
   try {
-    const respuesta = await fetch('http://localhost:8080/api/mesas', {
+    const res = await fetch('http://localhost:8080/api/mesas', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+          numeroMesa: numero, 
+          estado: 'LIBRE' // Nace libre por defecto
+      })
     })
 
-    if (respuesta.ok) {
-      await cargarMesas() // Recargamos la lista
+    if (res.ok) {
+      cargarMesas() // Recargamos para ver la nueva mesa
     } else {
-      alert("Error al crear la mesa")
+      alert("Error: Quizás esa mesa ya existe.")
     }
-  } catch (error) {
-    console.error("Error conectando con el servidor:", error)
-    alert("Error de conexión")
+  } catch (e) {
+    console.error(e)
+    alert("Error de conexión al crear mesa")
   }
 }
 
-// 3. Ir al detalle de la mesa (Usando el ID real)
+// --- NAVEGACIÓN ---
 const irAMesa = (id) => {
   router.push(`/mesa/${id}`)
 }
 
-// Cargar al inicio
 onMounted(() => {
   cargarMesas()
+  intervalo = setInterval(cargarMesas, 2000) // Refresco automático
 })
+
+onUnmounted(() => clearInterval(intervalo))
 </script>
 
 <template>
-  <div class="mesas-page">
-    <div class="header-mesas">
-        <h1>MESAS</h1>
-    </div>
-
-    <div class="grid-mesas">
+  <div class="sala-container">
+    
+    <header class="header-sala">
+      <h1>SALA PRINCIPAL</h1>
       
-      <div v-for="mesa in mesas" :key="mesa.idMesa" class="card-mesa">
-        <div class="estado-icon">
-          <span v-if="mesa.estado === 'LIBRE'" title="Libre">🟢</span>
-          <span v-else-if="mesa.estado === 'OCUPADA'" title="Ocupada">🔴</span>
-          <span v-else title="Pidiendo Cuenta">⚠️</span>
-        </div>
+      <button class="btn-crear" @click="crearMesa">
+        + Nueva Mesa
+      </button>
+    </header>
 
-        <h2>MESA {{ mesa.numeroMesa }}</h2>
+    <div v-if="mesas.length > 0" class="grid-mesas">
+      <div 
+        v-for="mesa in mesas" 
+        :key="mesa.idMesa" 
+        class="card-mesa"
+        :class="mesa.estado" 
+        @click="irAMesa(mesa.idMesa)"
+      >
+        <div class="numero">{{ mesa.numeroMesa }}</div>
+        <div class="estado">{{ mesa.estado }}</div>
         
-        <button class="btn-ver" @click="irAMesa(mesa.idMesa)">
-            VER MESA
-        </button>
+        <div class="icono-estado">
+           <span v-if="mesa.estado === 'LIBRE'">🟢</span>
+           <span v-else-if="mesa.estado === 'OCUPADA'">🔴</span>
+           <span v-else-if="mesa.estado === 'PIDIENDO_CUENTA'">💶</span>
+           <span v-else>🙋</span>
+        </div>
       </div>
-
-      <div class="card-mesa nueva-mesa" @click="crearNuevaMesa">
-        <div class="plus-icon">+</div>
-        <span>NUEVA MESA</span>
-      </div>
-
     </div>
+
+    <div v-else class="empty-state">
+      <p>No hay mesas creadas.</p>
+      <p>Pulsa en <b>+ Nueva Mesa</b> para empezar.</p>
+    </div>
+
   </div>
 </template>
 
 <style scoped>
-.mesas-page { width: 100%; }
+.sala-container { padding: 20px; }
 
-.header-mesas {
-    border-bottom: 3px solid #CCA300;
-    margin-bottom: 20px;
-    padding-bottom: 5px;
-    width: 100%;
+/* CABECERA */
+.header-sala { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 30px; 
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 15px;
 }
 
-h1 { color: #000; font-weight: bold; margin: 0; }
+h1 { color: #333; margin: 0; }
 
+/* BOTÓN CREAR (VERDE) */
+.btn-crear {
+  background-color: #223E2A;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.btn-crear:hover {
+  background-color: #1a2f20;
+  transform: scale(1.05);
+}
+
+/* GRID */
 .grid-mesas {
-    display: grid;
-    /* Ajuste automático para que queden bonitas */
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* Adaptable */
+  gap: 20px;
 }
 
+/* TARJETA DE MESA */
 .card-mesa {
-    background-color: #737373;
-    border-radius: 10px;
-    height: 180px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    position: relative;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    transition: transform 0.2s;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: all 0.3s;
+  border: 3px solid transparent;
+  position: relative;
+  overflow: hidden;
 }
 
-.estado-icon {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 1.2rem;
-}
+.card-mesa:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.15); }
 
-.btn-ver {
-    background-color: #223E2A;
-    color: #CCA300;
-    border: 2px solid #CCA300;
-    padding: 8px 20px;
-    border-radius: 5px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 15px;
-}
+/* ESTADOS VISUALES */
+.card-mesa.LIBRE { border-color: #4CAF50; color: #2E7D32; }
+.card-mesa.OCUPADA { border-color: #F44336; color: #C62828; background-color: #FFEBEE; }
+.card-mesa.PIDIENDO_CUENTA { border-color: #2196F3; background-color: #E3F2FD; animation: palpitar 1s infinite; }
+.card-mesa.AYUDA { border-color: #FF9800; background-color: #FFF3E0; animation: palpitar 1s infinite; }
 
-.btn-ver:hover {
-    background-color: #1a2f20;
-}
+.numero { font-size: 2.5rem; font-weight: 900; margin-bottom: 5px; }
+.estado { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+.icono-estado { font-size: 1.5rem; margin-top: 10px; }
 
-.nueva-mesa {
-    background-color: #e0e0e0;
-    color: #555;
-    border: 3px dashed #CCA300;
-    cursor: pointer;
-}
+.empty-state { text-align: center; color: #777; margin-top: 50px; font-size: 1.2rem; }
 
-.nueva-mesa:hover {
-    background-color: #d0d0d0;
-    transform: scale(1.02);
-}
-
-.plus-icon {
-    font-size: 3rem;
-    color: #CCA300;
-    font-weight: bold;
+@keyframes palpitar {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
 }
 </style>
