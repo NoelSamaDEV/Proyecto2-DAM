@@ -12,7 +12,7 @@ public interface LineaPedidoRepositorio extends JpaRepository<LineaPedido, Integ
     // Busca si existe una línea (para sumar cantidad)
     Optional<LineaPedido> findByPedido_IdPedidoAndProducto_IdProducto(Integer idPedido, Integer idProducto);
 
-    // SUMA INFALIBLE: Calcula el total directamente en la base de datos
+    // Calcula el total directamente en la base de datos
     @Query("SELECT COALESCE(SUM(l.subtotal), 0) FROM LineaPedido l WHERE l.pedido.idPedido = :idPedido")
     BigDecimal calcularTotalPedido(@Param("idPedido") Integer idPedido);
 }

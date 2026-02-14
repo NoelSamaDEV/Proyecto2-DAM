@@ -38,7 +38,7 @@ public class PedidoGestor {
             Pedido nuevo = new Pedido();
             nuevo.setMesa(mesa);
             nuevo.setEstado("ABIERTO");
-            nuevo.setFecha(LocalDateTime.now()); // <--- CORREGIDO: LocalDateTime.now()
+            nuevo.setFecha(LocalDateTime.now());
             nuevo.setTotal(BigDecimal.ZERO);
             nuevo.setLineasPedido(new ArrayList<>());
 

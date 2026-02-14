@@ -27,9 +27,9 @@ const descargarPDF = async () => {
 
   // A. Usamos html2canvas para tomar una "foto" del div del QR
   const canvas = await html2canvas(zonaImpresion.value, {
-    scale: 3, // Mayor escala = mejor calidad de imagen
+    scale: 3,
     useCORS: true,
-    backgroundColor: '#ffffff' // Fondo blanco obligatorio para el PDF
+    backgroundColor: '#ffffff'
   })
 
   // B. Convertimos esa foto a formato imagen
@@ -39,7 +39,7 @@ const descargarPDF = async () => {
   const pdf = new jsPDF('p', 'mm', 'a4')
   
   // D. Calculamos medidas para centrar la imagen
-  const pdfWidth = pdf.internal.pageSize.getWidth() // Ancho del A4 (210mm)
+  const pdfWidth = pdf.internal.pageSize.getWidth()
   const imgProps = pdf.getImageProperties(imgData)
   
   // Ajustamos el alto manteniendo la proporción original
@@ -89,7 +89,7 @@ const descargarPDF = async () => {
   position: fixed;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.7); /* Oscuro transparente */
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -117,13 +117,13 @@ const descargarPDF = async () => {
   color: #555;
 }
 
-/* Estilos de la zona que se va a imprimir */
+/* Estilos de la zona a imprimir */
 .area-qr {
   border: 2px dashed #ccc;
   padding: 20px;
   margin: 20px 0;
   border-radius: 10px;
-  background-color: white; /* Importante para que el PDF no salga gris */
+  background-color: white;
 }
 
 .titulo-impresion {

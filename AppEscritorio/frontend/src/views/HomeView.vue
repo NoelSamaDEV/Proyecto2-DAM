@@ -30,14 +30,14 @@ const crearMesa = async () => {
     const res = await fetch('http://localhost:8080/api/mesas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-          numeroMesa: numero, 
-          estado: 'LIBRE' // Nace libre por defecto
+      body: JSON.stringify({
+          numeroMesa: numero,
+          estado: 'LIBRE'
       })
     })
 
     if (res.ok) {
-      cargarMesas() // Recargamos para ver la nueva mesa
+      cargarMesas()
     } else {
       alert("Error: Quizás esa mesa ya existe.")
     }
@@ -54,7 +54,7 @@ const irAMesa = (id) => {
 
 onMounted(() => {
   cargarMesas()
-  intervalo = setInterval(cargarMesas, 2000) // Refresco automático
+  intervalo = setInterval(cargarMesas, 2000)
 })
 
 onUnmounted(() => clearInterval(intervalo))
@@ -134,7 +134,7 @@ h1 { color: #333; margin: 0; }
 /* GRID */
 .grid-mesas {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* Adaptable */
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 20px;
 }
 

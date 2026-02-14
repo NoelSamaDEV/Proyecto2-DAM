@@ -4,8 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import ModalQR from '../components/ModalQR.vue'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-// Importamos tu logo (asegúrate de que el archivo existe en esta ruta)
-import logoUrl from '@/assets/logo.png' 
+// Importamos el logo
+import logoUrl from '@/assets/logo.png'
 
 const route = useRoute()
 const router = useRouter()
@@ -33,7 +33,6 @@ const toggleLinea = (idLinea) => {
 
 // --- CARGA DE DATOS ---
 const cargarDatos = async () => {
-  // Solo mostramos 'Cargando...' la primera vez para no parpadear en el refresco
   if (!mesa.value) cargando.value = true
   
   try {
@@ -44,7 +43,7 @@ const cargarDatos = async () => {
     if (resPedido.ok) pedidoActual.value = await resPedido.json()
     else pedidoActual.value = null
 
-  } catch (e) { console.error(e) } 
+  } catch (e) { console.error(e) }
   finally { cargando.value = false }
 }
 
@@ -53,7 +52,7 @@ const realizarAccion = async (e) => {
     setTimeout(async () => {
         await fetch(`http://localhost:8080/api/mesas/${idMesa}/atender`, { method: 'POST' })
         cargarDatos()
-        e.target.checked = false // Reset visual del checkbox
+        e.target.checked = false
     }, 500)
 }
 
@@ -92,17 +91,16 @@ const cargarImagen = (src) => {
 const imprimirTicket = async () => {
   if (!pedidoActual.value) return alert("No hay pedido para imprimir")
 
-  // Formato tipo ticket (80mm ancho, altura variable según contenido)
+  // Formato del ticket
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
-    format: [80, 240] 
+    format: [80, 240]
   })
 
   try {
     // 1. LOGO (Arriba del todo y centrado)
     const imgData = await cargarImagen(logoUrl)
-    // Ajusta las coordenadas (x, y, ancho, alto) según tu logo
     doc.addImage(imgData, 'PNG', 25, 2, 30, 30)
   } catch (e) {
     console.warn("No se pudo cargar el logo:", e)
@@ -111,15 +109,14 @@ const imprimirTicket = async () => {
   // 2. DATOS RESTAURANTE
   doc.setFontSize(12)
   doc.setFont("helvetica", "bold")
-  doc.text("FOODNOW RESTAURANT", 40, 38, { align: "center" }) // Bajamos Y para dejar sitio al logo
-  
+  doc.text("FOODNOW RESTAURANT", 40, 38, { align: "center" })
   doc.setFontSize(9)
   doc.setFont("helvetica", "normal")
   doc.text("C/ Ejemplo, 123", 40, 43, { align: "center" })
   doc.text("Madrid, España", 40, 47, { align: "center" })
 
   doc.setLineWidth(0.5)
-  doc.line(5, 52, 75, 52) // Línea separadora
+  doc.line(5, 52, 75, 52)
 
   // 3. METADATOS DEL TICKET
   const fecha = new Date().toLocaleString()
@@ -140,7 +137,7 @@ const imprimirTicket = async () => {
     startY: 70,
     head: [columnas],
     body: filas,
-    theme: 'plain', // Estilo minimalista
+    theme: 'plain',
     styles: { fontSize: 8, cellPadding: 1 },
     headStyles: { fontStyle: 'bold', borderBottomWidth: 0.5 },
     columnStyles: {
@@ -229,7 +226,7 @@ onUnmounted(() => clearInterval(intervalo))
                 
                 <div v-if="mesa.estado === 'PIDIENDO_CUENTA'" class="alerta azul">
                     <div class="texto">
-                        <span class="icono">💶</span> 
+                        <span class="icono">💶</span>
                         <div><strong>Pide Cuenta</strong><br><small>Marcar al cobrar</small></div>
                     </div>
                     <label class="checkbox-container">
@@ -240,7 +237,7 @@ onUnmounted(() => clearInterval(intervalo))
 
                 <div v-else-if="mesa.estado === 'AYUDA'" class="alerta naranja">
                       <div class="texto">
-                        <span class="icono">🙋</span> 
+                        <span class="icono">🙋</span>
                         <div><strong>Ayuda</strong><br><small>Marcar al atender</small></div>
                     </div>
                     <label class="checkbox-container">
@@ -301,8 +298,8 @@ onUnmounted(() => clearInterval(intervalo))
 /* El cuadrado */
 .custom-box-verde {
   position: absolute; top: 0; left: 0; height: 24px; width: 24px;
-  background-color: white; 
-  border: 2px solid #223E2A; /* Borde Verde */
+  background-color: white;
+  border: 2px solid #223E2A;
   border-radius: 4px;
   transition: all 0.2s;
 }
@@ -344,7 +341,7 @@ onUnmounted(() => clearInterval(intervalo))
 .btn-vaciar { background: #333; color: white; padding: 15px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; font-weight: bold; }
 .btn-qr, .btn-atras { padding: 10px 20px; cursor: pointer; border: 1px solid #ccc; background: white; border-radius: 5px; font-weight: bold; }
 
-/* BOTÓN IMPRIMIR (ESTILO NUEVO) */
+/* BOTÓN IMPRIMIR */
 .btn-imprimir {
   background-color: #223E2A; 
   color: white; 

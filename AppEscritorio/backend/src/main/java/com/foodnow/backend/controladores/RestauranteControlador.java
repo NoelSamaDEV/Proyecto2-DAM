@@ -8,21 +8,21 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
-@RestController // Indica que esta clase recibe peticiones web (JSON)
-@RequestMapping("/api/restaurantes") // Esta es la URL base para todo lo de aquí
+@RestController
+@RequestMapping("/api/restaurantes")
 public class RestauranteControlador {
 
     @Autowired
     private RestauranteGestor restauranteGestor; // Llamamos al jefe (Gestor)
 
-    // 1. GET: Dame todos los restaurantes
+    // 1. GET: Da todos los restaurantes
     // URL: http://localhost:8080/api/restaurantes
     @GetMapping
     public List<Restaurante> obtenerTodos() {
         return restauranteGestor.obtenerTodos();
     }
 
-    // 2. GET: Dame un restaurante por ID
+    // 2. GET: Da un restaurante por ID
     // URL: http://localhost:8080/api/restaurantes/1
     @GetMapping("/{id}")
     public Optional<Restaurante> obtenerPorId(@PathVariable Integer id) {

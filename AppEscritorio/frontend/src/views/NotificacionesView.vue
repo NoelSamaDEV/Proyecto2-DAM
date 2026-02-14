@@ -5,8 +5,8 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 // --- ESTADO ---
-const listaAvisosMesa = ref([])   
-const listaPedidos = ref([])      
+const listaAvisosMesa = ref([])
+const listaPedidos = ref([])
 const cargando = ref(true)
 let intervalo = null
 
@@ -45,7 +45,7 @@ const cargarTodo = async () => {
 
         // BANDERAS DE ESTADO
         p.etiqueta = "" 
-        p.claseBorde = "borde-verde" // Por defecto (sin cambios)
+        p.claseBorde = "borde-verde"
 
         if (numLineasAnterior === undefined) {
           // CASO 1: NO EXISTÍA -> ES NUEVO
@@ -94,7 +94,7 @@ const atenderPedido = async (pedido) => {
   if (pedido.mesa?.idMesa) {
     await fetch(`http://localhost:8080/api/pedidos/mesa/${pedido.mesa.idMesa}/cerrar`, { method: 'POST' })
   }
-  // 2. Borrar de Memoria Local (Importante)
+  // 2. Borrar de Memoria Local
   memoriaCantidadLineas.value.delete(pedido.idPedido)
   // 3. Quitar visualmente
   listaPedidos.value = listaPedidos.value.filter(p => p.idPedido !== pedido.idPedido)

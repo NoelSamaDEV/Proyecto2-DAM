@@ -1,6 +1,6 @@
 package com.foodnow.backend.repositorios;
 
-import com.foodnow.backend.entidades.Pedido; // <--- CORREGIDO A ENTIDADES
+import com.foodnow.backend.entidades.Pedido;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 

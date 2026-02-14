@@ -5,7 +5,7 @@ import ModalQR from '../components/ModalQR.vue'
 
 const router = useRouter()
 const mesas = ref([])
-const nuevaMesaNumero = ref('') 
+const nuevaMesaNumero = ref('')
 let intervalo = null
 
 // VARIABLES MODAL QR
@@ -31,7 +31,7 @@ const cargarMesas = async () => {
 
 // 2. BOTÓN DE REFRESCAR MANUAL
 const forzarRecarga = () => {
-    // alert("Refrescando datos...") // Descomenta si quieres ver un aviso visual
+    // alert("Refrescando datos...")
     cargarMesas()
 }
 
@@ -52,7 +52,7 @@ const crearMesa = async () => {
     })
     
     if (res.ok) {
-      nuevaMesaNumero.value = '' // Limpiar input
+      nuevaMesaNumero.value = ''
       cargarMesas()
     } else {
       alert("❌ Error: Esa mesa ya existe.")
@@ -87,7 +87,7 @@ const irAMesa = (id) => {
 
 onMounted(() => {
   cargarMesas()
-  // intervalo = setInterval(cargarMesas, 5000) // Aumentamos tiempo para no saturar si hay error
+  // intervalo = setInterval(cargarMesas, 5000)
 })
 
 onUnmounted(() => {
@@ -161,7 +161,7 @@ onUnmounted(() => {
   display: flex; justify-content: space-between; align-items: center;
   box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 30px;
   position: relative; 
-  z-index: 10; /* IMPORTANTE: Asegura que esté por encima */
+  z-index: 10;
 }
 
 h1 { margin: 0; font-size: 1.8rem; font-weight: bold; color: #000; }
@@ -172,7 +172,7 @@ h1 { margin: 0; font-size: 1.8rem; font-weight: bold; color: #000; }
 .input-numero {
   width: 60px;
   padding: 10px;
-  border: 2px solid #ddd; /* Borde más visible */
+  border: 2px solid #ddd;
   border-radius: 6px;
   text-align: center;
   font-size: 1.1rem;
@@ -187,7 +187,7 @@ h1 { margin: 0; font-size: 1.8rem; font-weight: bold; color: #000; }
   border-radius: 6px; font-weight: bold; cursor: pointer;
   display: flex; align-items: center; gap: 5px;
 }
-.btn-crear:active { transform: scale(0.95); } /* Efecto visual al clicar */
+.btn-crear:active { transform: scale(0.95); }
 
 .btn-refresh {
   background: white; border: 1px solid #ddd; padding: 10px; border-radius: 6px;

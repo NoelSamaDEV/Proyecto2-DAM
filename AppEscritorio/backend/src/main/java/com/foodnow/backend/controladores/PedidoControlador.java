@@ -24,9 +24,7 @@ public class PedidoControlador {
     @Autowired private ProductoInterfaz productoRepo;
     @Autowired private LineaPedidoRepositorio lineaRepo;
 
-    // --- ENDPOINT DE NOTIFICACIONES (POLLING) ---
-    // Este método devuelve SOLO los pedidos que están ABIERTOS.
-    // La app de escritorio llamará aquí cada 3 segundos.
+
     @GetMapping("/pendientes")
     public ResponseEntity<List<Pedido>> obtenerPedidosPendientes() {
         List<Pedido> todos = pedidoRepo.findAll();
@@ -34,7 +32,6 @@ public class PedidoControlador {
 
         for (Pedido p : todos) {
             if ("ABIERTO".equals(p.getEstado())) {
-                // Truco de seguridad: Recalculamos el total real antes de enviarlo
                 BigDecimal totalReal = lineaRepo.calcularTotalPedido(p.getIdPedido());
                 p.setTotal(totalReal);
                 pendientes.add(p);
@@ -69,16 +66,14 @@ public class PedidoControlador {
         Mesa mesa = mesaRepo.findById(idMesa).orElse(null);
         if (mesa == null) return ResponseEntity.notFound().build();
 
-        // LOGICA DE "FUERZA BRUTA" PARA EL ESTADO
         if (!"OCUPADA".equals(mesa.getEstado())) {
-            // Si parecía libre, limpiamos pedidos zombies anteriores
             Optional<Pedido> pedidoZombie = pedidoRepo.findByMesa_IdMesaAndEstado(idMesa, "ABIERTO");
             if (pedidoZombie.isPresent()) {
                 Pedido viejo = pedidoZombie.get();
                 viejo.setEstado("CERRADO");
                 pedidoRepo.saveAndFlush(viejo);
             }
-            // Forzamos estado OCUPADA
+
             mesaRepo.forzarEstadoOcupada(idMesa);
             mesa.setEstado("OCUPADA");
             respuesta.put("mensaje", "Mesa abierta y pedido iniciado.");

@@ -1,6 +1,6 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
-// Importamos tu logo local
+// Importamos el logo
 import logo from '@/assets/logo.png'
 </script>
 
@@ -37,7 +37,7 @@ body { margin: 0; padding: 0; font-family: 'Arial', sans-serif; background-color
 /* --- ESTILOS DE LA BARRA LATERAL --- */
 .sidebar {
   width: 250px;
-  background-color: #223E2A; /* Verde FoodNow */
+  background-color: #223E2A;
   color: white;
   display: flex;
   flex-direction: column;
@@ -54,11 +54,11 @@ body { margin: 0; padding: 0; font-family: 'Arial', sans-serif; background-color
 
 /* --- LOGO MUCHO MÁS GRANDE --- */
 .logo-img { 
-  width: 140px; /* Aumentado de 60px a 140px */
+  width: 140px;
   height: auto;
   object-fit: contain;
   display: block;
-  margin: 0 auto 10px auto; /* Centrado */
+  margin: 0 auto 10px auto;
 } 
 
 .nav-btn {
@@ -77,7 +77,7 @@ body { margin: 0; padding: 0; font-family: 'Arial', sans-serif; background-color
 
 .nav-btn:hover, .router-link-active {
   background-color: #1a2f20;
-  border: 1px solid #CCA300; /* Borde Amarillo */
+  border: 1px solid #CCA300;
   color: #CCA300;
 }
 

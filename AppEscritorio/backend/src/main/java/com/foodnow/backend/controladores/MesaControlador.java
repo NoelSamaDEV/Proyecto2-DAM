@@ -22,7 +22,6 @@ public class MesaControlador {
     @Autowired
     private PedidoGestor pedidoGestor;
 
-    // GET, POST, DELETE normales...
     @GetMapping
     public List<Mesa> listarMesas() { return mesaGestor.obtenerTodas(); }
 
@@ -46,7 +45,6 @@ public class MesaControlador {
         return ResponseEntity.notFound().build();
     }
 
-    // --- AQUÍ ESTÁ EL CAMBIO ---
     @PostMapping("/{id}/liberar")
     public ResponseEntity<String> liberarMesa(@PathVariable Integer id) {
         // 1. Buscar Mesa
@@ -58,7 +56,7 @@ public class MesaControlador {
         // 2. Buscar Pedido Abierto y ELIMINARLO
         Optional<Pedido> pedidoAbierto = pedidoGestor.obtenerPedidoAbierto(id);
         if (pedidoAbierto.isPresent()) {
-            // Borramos el pedido de la base de datos
+            // Borra el pedido de la base de datos
             pedidoGestor.eliminarPedido(pedidoAbierto.get().getIdPedido());
         }
 
@@ -68,7 +66,7 @@ public class MesaControlador {
 
         return ResponseEntity.ok("Mesa reseteada y pedido eliminado");
     }
-    // 1. SIMULAR: Cliente pide la cuenta
+    // 1. Cliente pide la cuenta
     @PostMapping("/{id}/pedir-cuenta")
     public ResponseEntity<Mesa> pedirCuenta(@PathVariable Integer id) {
         Optional<Mesa> m = mesaGestor.obtenerPorId(id);
@@ -80,7 +78,7 @@ public class MesaControlador {
         return ResponseEntity.notFound().build();
     }
 
-    // 2. SIMULAR: Cliente llama al camarero
+    // 2. Cliente llama al camarero
     @PostMapping("/{id}/llamar-camarero")
     public ResponseEntity<Mesa> llamarCamarero(@PathVariable Integer id) {
         Optional<Mesa> m = mesaGestor.obtenerPorId(id);
@@ -92,7 +90,7 @@ public class MesaControlador {
         return ResponseEntity.notFound().build();
     }
 
-    // 3. RESOLVER: Camarero atiende (Checkbox)
+    // 3. Camarero atiende (Checkbox)
     @PostMapping("/{id}/atender")
     public ResponseEntity<Mesa> atenderNotificacion(@PathVariable Integer id) {
         Optional<Mesa> m = mesaGestor.obtenerPorId(id);
