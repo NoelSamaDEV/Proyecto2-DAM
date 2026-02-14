@@ -20,6 +20,11 @@ public class LineaPedido {
 
     private BigDecimal subtotal;
 
+    // --- NUEVO CAMPO PARA EL CHECKBOX VERDE ---
+    @Column(columnDefinition = "boolean default false")
+    private Boolean servido = false;
+    // ------------------------------------------
+
     @ManyToOne
     @JoinColumn(name = "id_pedido")
     @JsonIgnoreProperties("lineasPedido") // Evita bucle infinito
@@ -29,7 +34,8 @@ public class LineaPedido {
     @JoinColumn(name = "id_producto")
     private Producto producto;
 
-    // GETTERS Y SETTERS
+    // ================= GETTERS Y SETTERS =================
+
     public Integer getIdLinea() { return idLinea; }
     public void setIdLinea(Integer idLinea) { this.idLinea = idLinea; }
 
@@ -41,6 +47,11 @@ public class LineaPedido {
 
     public BigDecimal getSubtotal() { return subtotal; }
     public void setSubtotal(BigDecimal subtotal) { this.subtotal = subtotal; }
+
+    // --- GETTER Y SETTER NUEVOS ---
+    public Boolean getServido() { return servido; }
+    public void setServido(Boolean servido) { this.servido = servido; }
+    // ------------------------------
 
     public Pedido getPedido() { return pedido; }
     public void setPedido(Pedido pedido) { this.pedido = pedido; }

@@ -39,7 +39,6 @@ public class PedidoControlador {
         }
         return ResponseEntity.ok(pendientes);
     }
-    // ---------------------------------------------
 
     @GetMapping("/mesa/{idMesa}/actual")
     public ResponseEntity<Pedido> obtenerPedidoActual(@PathVariable Integer idMesa) {
@@ -112,6 +111,7 @@ public class PedidoControlador {
                 nueva.setCantidad(solicitud.cantidad);
                 nueva.setPrecioUnidad(producto.getPrecio());
                 nueva.setSubtotal(producto.getPrecio().multiply(new BigDecimal(solicitud.cantidad)));
+                nueva.setServido(false); // Default
                 lineaRepo.saveAndFlush(nueva);
             }
 
@@ -140,8 +140,78 @@ public class PedidoControlador {
         return ResponseEntity.ok().build();
     }
 
+
+    @PostMapping("/movil/crear")
+    public ResponseEntity<?> crearPedidoDesdeMovil(@RequestBody SolicitudPedidoMovil solicitud) {
+
+        // 1. Validar mesa
+        Mesa mesa = mesaRepo.findById(solicitud.idMesa).orElse(null);
+        if (mesa == null) return ResponseEntity.badRequest().body("Mesa no encontrada");
+
+        // 2. Buscar si ya hay pedido abierto, si no, crear uno nuevo
+        Pedido pedido = pedidoRepo.findByMesa_IdMesaAndEstado(solicitud.idMesa, "ABIERTO")
+                .orElseGet(() -> {
+                    Pedido p = new Pedido();
+                    p.setMesa(mesa);
+                    p.setEstado("ABIERTO");
+                    p.setFecha(LocalDateTime.now());
+                    p.setTotal(BigDecimal.ZERO);
+                    return pedidoRepo.save(p);
+                });
+
+        // 3. Poner mesa en OCUPADA (Por si estaba LIBRE)
+        if (!"OCUPADA".equals(mesa.getEstado())) {
+            mesa.setEstado("OCUPADA");
+            mesaRepo.save(mesa);
+        }
+
+        // 4. Recorrer los productos del carrito del móvil
+        if (solicitud.productos != null) {
+            for (SolicitudProducto item : solicitud.productos) {
+                Producto prod = productoRepo.findById(item.idProducto).orElse(null);
+
+                if (prod != null) {
+                    // Verificar si ya existe esa línea en el pedido para sumar cantidad
+                    Optional<LineaPedido> lineaExistente = lineaRepo.findByPedido_IdPedidoAndProducto_IdProducto(
+                            pedido.getIdPedido(), prod.getIdProducto());
+
+                    if (lineaExistente.isPresent()) {
+                        LineaPedido linea = lineaExistente.get();
+                        int nuevaCant = linea.getCantidad() + item.cantidad;
+                        linea.setCantidad(nuevaCant);
+                        linea.setSubtotal(prod.getPrecio().multiply(new BigDecimal(nuevaCant)));
+                        lineaRepo.save(linea);
+                    } else {
+                        LineaPedido nueva = new LineaPedido();
+                        nueva.setPedido(pedido);
+                        nueva.setProducto(prod);
+                        nueva.setCantidad(item.cantidad);
+                        nueva.setPrecioUnidad(prod.getPrecio());
+                        nueva.setSubtotal(prod.getPrecio().multiply(new BigDecimal(item.cantidad)));
+                        nueva.setServido(false); // Checkbox verde apagado
+                        lineaRepo.save(nueva);
+                    }
+                }
+            }
+        }
+
+        // 5. Recalcular total y devolver éxito
+        BigDecimal total = lineaRepo.calcularTotalPedido(pedido.getIdPedido());
+        pedido.setTotal(total);
+        pedidoRepo.save(pedido);
+
+        return ResponseEntity.ok(Map.of("mensaje", "Pedido recibido correctamente", "idPedido", pedido.getIdPedido()));
+    }
+
+    // --- CLASES AUXILIARES (DTOs) ---
+
     public static class SolicitudProducto {
         public Integer idProducto;
         public Integer cantidad;
+    }
+
+    public static class SolicitudPedidoMovil {
+        public Integer idMesa;
+        public List<SolicitudProducto> productos;
     }
 }

@@ -10,6 +10,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/productos")
+@CrossOrigin(origins = "*") // <--- IMPORTANTE: Permite acceso desde el móvil
 public class ProductoControlador {
 
     @Autowired
