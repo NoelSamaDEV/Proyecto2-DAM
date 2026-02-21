@@ -12,7 +12,7 @@ public interface ApiService {
     @GET("productos/categoria/{id}")
     Call<List<Producto>> obtenerProductosPorCategoria(@Path("id") Integer idCategoria);
 
-    @POST("pedidos")
+    @POST("pedidos/movil/crear")
     Call<RespuestaPedido> enviarPedido(@Body SolicitudPedidoMovil solicitud);
 
     @POST("mesas/{id}/ayuda")
