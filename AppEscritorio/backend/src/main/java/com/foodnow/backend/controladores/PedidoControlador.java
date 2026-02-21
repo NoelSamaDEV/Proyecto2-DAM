@@ -24,7 +24,6 @@ public class PedidoControlador {
     @Autowired private ProductoInterfaz productoRepo;
     @Autowired private LineaPedidoRepositorio lineaRepo;
 
-
     @GetMapping("/pendientes")
     public ResponseEntity<List<Pedido>> obtenerPedidosPendientes() {
         List<Pedido> todos = pedidoRepo.findAll();
@@ -46,10 +45,9 @@ public class PedidoControlador {
         if (pedidoOpt.isPresent()) {
             Pedido pedido = pedidoOpt.get();
             BigDecimal totalReal = lineaRepo.calcularTotalPedido(pedido.getIdPedido());
-            // Si hay discrepancia, corregimos en BD
             if (pedido.getTotal().compareTo(totalReal) != 0) {
                 pedido.setTotal(totalReal);
-                pedidoRepo.save(pedido);
+                pedidoRepo.saveAndFlush(pedido);
             }
             return ResponseEntity.ok(pedido);
         }
@@ -80,7 +78,6 @@ public class PedidoControlador {
             respuesta.put("mensaje", "Producto sumado al pedido.");
         }
 
-        // Obtener o crear pedido
         Pedido pedido = pedidoRepo.findByMesa_IdMesaAndEstado(idMesa, "ABIERTO")
                 .orElseGet(() -> {
                     Pedido p = new Pedido();
@@ -92,30 +89,34 @@ public class PedidoControlador {
                     return pedidoRepo.saveAndFlush(p);
                 });
 
-        // Añadir producto
         Producto producto = productoRepo.findById(solicitud.idProducto).orElse(null);
         if (producto != null) {
-            Optional<LineaPedido> lineaExistente = lineaRepo.findByPedido_IdPedidoAndProducto_IdProducto(
-                    pedido.getIdPedido(), producto.getIdProducto());
+
+            // 🛠️ LA MAGIA ESTÁ AQUÍ: Buscamos si ya hay una línea de este producto... pero SOLO SI AÚN NO SE HA SERVIDO
+            Optional<LineaPedido> lineaExistente = pedido.getLineasPedido().stream()
+                    .filter(l -> l.getProducto().getIdProducto().equals(producto.getIdProducto()) && !l.getServido())
+                    .findFirst();
 
             if (lineaExistente.isPresent()) {
+                // Si la cocina aún no lo ha hecho, se lo sumamos a la cantidad actual
                 LineaPedido linea = lineaExistente.get();
                 int nuevaCantidad = linea.getCantidad() + solicitud.cantidad;
                 linea.setCantidad(nuevaCantidad);
                 linea.setSubtotal(producto.getPrecio().multiply(new BigDecimal(nuevaCantidad)));
                 lineaRepo.saveAndFlush(linea);
             } else {
+                // Si la cocina ya lo sirvió (o es la primera vez), creamos una línea totalmente nueva
                 LineaPedido nueva = new LineaPedido();
                 nueva.setPedido(pedido);
                 nueva.setProducto(producto);
                 nueva.setCantidad(solicitud.cantidad);
                 nueva.setPrecioUnidad(producto.getPrecio());
                 nueva.setSubtotal(producto.getPrecio().multiply(new BigDecimal(solicitud.cantidad)));
-                nueva.setServido(false); // Default
+                nueva.setServido(false);
                 lineaRepo.saveAndFlush(nueva);
+                pedido.getLineasPedido().add(nueva); // Lo añadimos a la lista en memoria
             }
 
-            // Recalcular total final y devolver
             BigDecimal totalCalculado = lineaRepo.calcularTotalPedido(pedido.getIdPedido());
             pedido.setTotal(totalCalculado);
             pedidoRepo.saveAndFlush(pedido);
@@ -134,21 +135,44 @@ public class PedidoControlador {
         if (pedidoOpt.isPresent()) {
             Pedido p = pedidoOpt.get();
             p.setEstado("CERRADO");
-            pedidoRepo.save(p);
+            pedidoRepo.saveAndFlush(p);
         }
         mesaRepo.forzarEstadoLibre(idMesa);
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/{idPedido}/marcar-servido")
+    public ResponseEntity<?> marcarPedidoServido(@PathVariable Integer idPedido) {
+        Optional<Pedido> pedidoOpt = pedidoRepo.findById(idPedido);
+        if (pedidoOpt.isPresent()) {
+            Pedido p = pedidoOpt.get();
+            for (LineaPedido linea : p.getLineasPedido()) {
+                linea.setServido(true);
+                lineaRepo.saveAndFlush(linea);
+            }
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/linea/{idLinea}/estado-servido")
+    public ResponseEntity<?> actualizarEstadoServido(@PathVariable Integer idLinea, @RequestBody Map<String, Boolean> body) {
+        Optional<LineaPedido> lineaOpt = lineaRepo.findById(idLinea);
+        if (lineaOpt.isPresent()) {
+            LineaPedido linea = lineaOpt.get();
+            linea.setServido(body.get("servido"));
+            lineaRepo.saveAndFlush(linea);
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
 
     @PostMapping("/movil/crear")
     public ResponseEntity<?> crearPedidoDesdeMovil(@RequestBody SolicitudPedidoMovil solicitud) {
 
-        // 1. Validar mesa
         Mesa mesa = mesaRepo.findById(solicitud.idMesa).orElse(null);
         if (mesa == null) return ResponseEntity.badRequest().body("Mesa no encontrada");
 
-        // 2. Buscar si ya hay pedido abierto, si no, crear uno nuevo
         Pedido pedido = pedidoRepo.findByMesa_IdMesaAndEstado(solicitud.idMesa, "ABIERTO")
                 .orElseGet(() -> {
                     Pedido p = new Pedido();
@@ -156,31 +180,32 @@ public class PedidoControlador {
                     p.setEstado("ABIERTO");
                     p.setFecha(LocalDateTime.now());
                     p.setTotal(BigDecimal.ZERO);
-                    return pedidoRepo.save(p);
+                    p.setLineasPedido(new ArrayList<>());
+                    return pedidoRepo.saveAndFlush(p);
                 });
 
-        // 3. Poner mesa en OCUPADA (Por si estaba LIBRE)
         if (!"OCUPADA".equals(mesa.getEstado())) {
             mesa.setEstado("OCUPADA");
             mesaRepo.save(mesa);
         }
 
-        // 4. Recorrer los productos del carrito del móvil
         if (solicitud.productos != null) {
             for (SolicitudProducto item : solicitud.productos) {
                 Producto prod = productoRepo.findById(item.idProducto).orElse(null);
 
                 if (prod != null) {
-                    // Verificar si ya existe esa línea en el pedido para sumar cantidad
-                    Optional<LineaPedido> lineaExistente = lineaRepo.findByPedido_IdPedidoAndProducto_IdProducto(
-                            pedido.getIdPedido(), prod.getIdProducto());
+
+                    // 🛠️ LA MISMA MAGIA PARA EL MÓVIL
+                    Optional<LineaPedido> lineaExistente = pedido.getLineasPedido().stream()
+                            .filter(l -> l.getProducto().getIdProducto().equals(prod.getIdProducto()) && !l.getServido())
+                            .findFirst();
 
                     if (lineaExistente.isPresent()) {
                         LineaPedido linea = lineaExistente.get();
                         int nuevaCant = linea.getCantidad() + item.cantidad;
                         linea.setCantidad(nuevaCant);
                         linea.setSubtotal(prod.getPrecio().multiply(new BigDecimal(nuevaCant)));
-                        lineaRepo.save(linea);
+                        lineaRepo.saveAndFlush(linea);
                     } else {
                         LineaPedido nueva = new LineaPedido();
                         nueva.setPedido(pedido);
@@ -188,22 +213,20 @@ public class PedidoControlador {
                         nueva.setCantidad(item.cantidad);
                         nueva.setPrecioUnidad(prod.getPrecio());
                         nueva.setSubtotal(prod.getPrecio().multiply(new BigDecimal(item.cantidad)));
-                        nueva.setServido(false); // Checkbox verde apagado
-                        lineaRepo.save(nueva);
+                        nueva.setServido(false);
+                        lineaRepo.saveAndFlush(nueva);
+                        pedido.getLineasPedido().add(nueva); // Lo guardamos en la memoria para que no se pise si piden 2 cosas seguidas
                     }
                 }
             }
         }
 
-        // 5. Recalcular total y devolver éxito
         BigDecimal total = lineaRepo.calcularTotalPedido(pedido.getIdPedido());
         pedido.setTotal(total);
-        pedidoRepo.save(pedido);
+        pedidoRepo.saveAndFlush(pedido);
 
         return ResponseEntity.ok(Map.of("mensaje", "Pedido recibido correctamente", "idPedido", pedido.getIdPedido()));
     }
-
-    // --- CLASES AUXILIARES (DTOs) ---
 
     public static class SolicitudProducto {
         public Integer idProducto;

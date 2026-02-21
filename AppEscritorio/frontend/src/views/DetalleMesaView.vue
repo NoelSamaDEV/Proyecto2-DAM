@@ -23,11 +23,27 @@ let intervalo = null
 // --- MEMORIA PARA LOS TICKS (Checkboxes) ---
 const memoriaEntregados = ref(new Set())
 
-const toggleLinea = (idLinea) => {
-  if (memoriaEntregados.value.has(idLinea)) {
-    memoriaEntregados.value.delete(idLinea)
+// --- NUEVO: GUARDA Y ENVÍA EL ESTADO AL SERVIDOR ---
+const toggleLinea = async (linea) => {
+  const estaEntregado = memoriaEntregados.value.has(linea.idLinea)
+  const nuevoEstado = !estaEntregado
+
+  // 1. Cambiamos el diseño al instante (para que no haya lag visual)
+  if (nuevoEstado) {
+    memoriaEntregados.value.add(linea.idLinea)
   } else {
-    memoriaEntregados.value.add(idLinea)
+    memoriaEntregados.value.delete(linea.idLinea)
+  }
+
+  // 2. Le avisamos a la base de datos
+  try {
+    await fetch(`http://localhost:8080/api/pedidos/linea/${linea.idLinea}/estado-servido`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ servido: nuevoEstado })
+    })
+  } catch (error) {
+    console.error("Error al guardar el estado del plato", error)
   }
 }
 
@@ -40,8 +56,19 @@ const cargarDatos = async () => {
     if (resMesa.ok) mesa.value = await resMesa.json()
     
     const resPedido = await fetch(`http://localhost:8080/api/pedidos/mesa/${idMesa}/actual`)
-    if (resPedido.ok) pedidoActual.value = await resPedido.json()
-    else pedidoActual.value = null
+    if (resPedido.ok) {
+      pedidoActual.value = await resPedido.json()
+      
+      // NUEVO: Al entrar, marcamos automáticamente los platos que ya estaban servidos en BD
+      memoriaEntregados.value.clear()
+      pedidoActual.value.lineasPedido.forEach(linea => {
+        if (linea.servido) {
+          memoriaEntregados.value.add(linea.idLinea)
+        }
+      })
+    } else {
+      pedidoActual.value = null
+    }
 
   } catch (e) { console.error(e) }
   finally { cargando.value = false }
@@ -91,22 +118,15 @@ const cargarImagen = (src) => {
 const imprimirTicket = async () => {
   if (!pedidoActual.value) return alert("No hay pedido para imprimir")
 
-  // Formato del ticket
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: [80, 240]
-  })
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [80, 240] })
 
   try {
-    // 1. LOGO (Arriba del todo y centrado)
     const imgData = await cargarImagen(logoUrl)
     doc.addImage(imgData, 'PNG', 25, 2, 30, 30)
   } catch (e) {
     console.warn("No se pudo cargar el logo:", e)
   }
 
-  // 2. DATOS RESTAURANTE
   doc.setFontSize(12)
   doc.setFont("helvetica", "bold")
   doc.text("FOODNOW RESTAURANT", 40, 38, { align: "center" })
@@ -118,14 +138,12 @@ const imprimirTicket = async () => {
   doc.setLineWidth(0.5)
   doc.line(5, 52, 75, 52)
 
-  // 3. METADATOS DEL TICKET
   const fecha = new Date().toLocaleString()
   doc.setFontSize(8)
   doc.text(`Fecha: ${fecha}`, 5, 58)
   doc.text(`Mesa: ${mesa.value.numeroMesa}`, 5, 62)
   doc.text(`Ref Pedido: #${pedidoActual.value.idPedido}`, 5, 66)
 
-  // 4. TABLA DE PRODUCTOS
   const columnas = ["Cant", "Producto", "Total"]
   const filas = pedidoActual.value.lineasPedido.map(l => [
     `${l.cantidad}`,
@@ -147,23 +165,19 @@ const imprimirTicket = async () => {
     margin: { left: 5, right: 5 }
   })
 
-  // 5. TOTAL
   const finalY = doc.lastAutoTable.finalY + 6
   doc.setFontSize(12)
   doc.setFont("helvetica", "bold")
   doc.text(`TOTAL: ${pedidoActual.value.total.toFixed(2)} €`, 75, finalY, { align: "right" })
 
-  // 6. PIE DE PÁGINA
   doc.setFontSize(9)
   doc.setFont("helvetica", "italic")
   doc.text("¡Gracias por su visita!", 40, finalY + 12, { align: "center" })
   doc.text("www.foodnow.app", 40, finalY + 16, { align: "center" })
 
-  // Guardar PDF
   doc.save(`Ticket_Mesa_${mesa.value.numeroMesa}.pdf`)
 }
 
-// Formateador de texto
 const formatoTexto = (estado) => {
     if (estado === 'PIDIENDO_CUENTA') return 'Pidiendo Cuenta'
     if (estado === 'AYUDA') return 'Ayuda'
@@ -204,7 +218,7 @@ onUnmounted(() => clearInterval(intervalo))
                    <label class="checkbox-wrapper">
                       <input type="checkbox" 
                              :checked="memoriaEntregados.has(linea.idLinea)" 
-                             @change="toggleLinea(linea.idLinea)">
+                             @change="toggleLinea(linea)">
                       <span class="custom-box-verde"></span>
                    </label>
 

@@ -5,7 +5,7 @@
     android:background="@color/fondo_gris">
 
     <LinearLayout
-        android:id="@+id/headerCategorias"
+        android:id="@+id/headerCorporativo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -33,7 +33,7 @@
             android:textColor="@color/amarillo_wireframe"/>
 
         <Button
-            android:id="@+id/btnLlamarCamarero"
+            android:id="@+id/btnAyudaProductos"
             android:layout_width="wrap_content"
             android:layout_height="38dp"
             android:text="🙋 Ayuda"
@@ -43,7 +43,7 @@
             android:layout_marginEnd="8dp"/>
 
         <Button
-            android:id="@+id/btnPedirCuenta"
+            android:id="@+id/btnCuentaProductos"
             android:layout_width="wrap_content"
             android:layout_height="38dp"
             android:text="💶 Cuenta"
@@ -53,36 +53,37 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/seccionTituloCategorias"
+        android:id="@+id/seccionNombreCategoria"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/headerCategorias"
+        android:layout_below="@id/headerCorporativo"
         android:background="@color/blanco"
         android:paddingVertical="12dp"
         android:paddingHorizontal="20dp"
         android:elevation="2dp">
 
         <TextView
+            android:id="@+id/txtTituloFoodNow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Categorías"
+            android:text="Categoría"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@color/negro_texto"/>
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerCategorias"
+        android:id="@+id/recyclerProductos"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/seccionTituloCategorias"
-        android:layout_above="@id/btnVerPedidoCategorias"
-        android:padding="8dp"
+        android:layout_below="@id/seccionNombreCategoria"
+        android:layout_above="@id/btnVerCarrito"
+        android:padding="4dp"
         android:clipToPadding="false"
         android:paddingBottom="20dp"/>
 
     <Button
-        android:id="@+id/btnVerPedidoCategorias"
+        android:id="@+id/btnVerCarrito"
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:layout_alignParentBottom="true"

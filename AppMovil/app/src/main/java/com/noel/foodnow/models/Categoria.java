@@ -1,17 +1,43 @@
 package com.noel.foodnow.models;
 
-public class Categoria {
-    private int id;
-    private String nombre;
-    private String imagenUrl; // Aquí irá tu futura URL (ej: "https://imgur.com/...")
+import com.google.gson.annotations.SerializedName;
 
-    public Categoria(int id, String nombre, String imagenUrl) {
-        this.id = id;
-        this.nombre = nombre;
-        this.imagenUrl = imagenUrl;
+public class Categoria {
+
+    @SerializedName("id_categoria")
+    private Integer idCategoria;
+
+    @SerializedName("nombre")
+    private String nombre;
+
+    @SerializedName("imagen")
+    private String imagen;
+
+    // CONSTRUCTOR
+    public Categoria() {}
+
+    // GETTERS Y SETTERS
+    public Integer getIdCategoria() {
+        return idCategoria;
     }
 
-    public int getId() { return id; }
-    public String getNombre() { return nombre; }
-    public String getImagenUrl() { return imagenUrl; }
+    public void setIdCategoria(Integer idCategoria) {
+        this.idCategoria = idCategoria;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public String getImagen() {
+        return imagen;
+    }
+
+    public void setImagen(String imagen) {
+        this.imagen = imagen;
+    }
 }

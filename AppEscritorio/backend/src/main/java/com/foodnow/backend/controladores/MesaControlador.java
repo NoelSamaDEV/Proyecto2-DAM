@@ -2,8 +2,8 @@ package com.foodnow.backend.controladores;
 
 import com.foodnow.backend.entidades.Mesa;
 import com.foodnow.backend.entidades.Pedido;
-import com.foodnow.backend.gestores.MesaGestor;
-import com.foodnow.backend.gestores.PedidoGestor;
+import com.foodnow.backend.interfaces.MesaInterfaz;
+import com.foodnow.backend.repositorios.PedidoRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,95 +13,73 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/mesas")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "*")
 public class MesaControlador {
 
     @Autowired
-    private MesaGestor mesaGestor;
+    private MesaInterfaz mesaRepo;
 
+    // Repositorio de pedidos para poder cerrarlos
     @Autowired
-    private PedidoGestor pedidoGestor;
+    private PedidoRepositorio pedidoRepo;
 
     @GetMapping
-    public List<Mesa> listarMesas() { return mesaGestor.obtenerTodas(); }
+    public List<Mesa> obtenerTodas() {
+        return mesaRepo.findAll();
+    }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Mesa> obtenerMesaPorId(@PathVariable Integer id) {
-        return mesaGestor.obtenerPorId(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Mesa> obtenerPorId(@PathVariable Integer id) {
+        // CORREGIDO: Declaración limpia de la variable
+        Optional<Mesa> mesaOpt = mesaRepo.findById(id);
+        return mesaOpt.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PostMapping
-    public Mesa guardarMesa(@RequestBody Mesa mesa) {
-        if (mesa.getEstado() != null) mesa.setEstado(mesa.getEstado().toUpperCase());
-        return mesaGestor.guardarMesa(mesa);
+    @PostMapping("/{id}/atender")
+    public ResponseEntity<?> atenderMesa(@PathVariable Integer id) {
+        mesaRepo.forzarEstadoOcupada(id);
+        return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> borrarMesa(@PathVariable Integer id) {
-        if (mesaGestor.obtenerPorId(id).isPresent()) {
-            mesaGestor.borrarMesa(id);
+    @PostMapping("/{id}/liberar")
+    public ResponseEntity<?> liberarMesa(@PathVariable Integer id) {
+        // 1. Ponemos la mesa como LIBRE
+        mesaRepo.forzarEstadoLibre(id);
+
+        // 2. Buscamos si la mesa tenía un pedido ABIERTO
+        Optional<Pedido> pedidoOpt = pedidoRepo.findByMesa_IdMesaAndEstado(id, "ABIERTO");
+
+        // 3. Si lo tiene, lo pasamos a CERRADO para que no se mezclen con el siguiente cliente
+        if (pedidoOpt.isPresent()) {
+            Pedido pedido = pedidoOpt.get();
+            pedido.setEstado("CERRADO");
+            pedidoRepo.saveAndFlush(pedido);
+        }
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/ayuda")
+    public ResponseEntity<?> pedirAyuda(@PathVariable Integer id) {
+        Optional<Mesa> mesaOpt = mesaRepo.findById(id);
+        if (mesaOpt.isPresent()) {
+            Mesa mesa = mesaOpt.get();
+            mesa.setEstado("AYUDA");
+            mesaRepo.save(mesa);
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.notFound().build();
     }
 
-    @PostMapping("/{id}/liberar")
-    public ResponseEntity<String> liberarMesa(@PathVariable Integer id) {
-        // 1. Buscar Mesa
-        Optional<Mesa> posibleMesa = mesaGestor.obtenerPorId(id);
-        if (posibleMesa.isEmpty()) return ResponseEntity.notFound().build();
-
-        Mesa mesa = posibleMesa.get();
-
-        // 2. Buscar Pedido Abierto y ELIMINARLO
-        Optional<Pedido> pedidoAbierto = pedidoGestor.obtenerPedidoAbierto(id);
-        if (pedidoAbierto.isPresent()) {
-            // Borra el pedido de la base de datos
-            pedidoGestor.eliminarPedido(pedidoAbierto.get().getIdPedido());
-        }
-
-        // 3. Poner Mesa como LIBRE
-        mesa.setEstado("LIBRE");
-        mesaGestor.guardarMesa(mesa);
-
-        return ResponseEntity.ok("Mesa reseteada y pedido eliminado");
-    }
-    // 1. Cliente pide la cuenta
-    @PostMapping("/{id}/pedir-cuenta")
-    public ResponseEntity<Mesa> pedirCuenta(@PathVariable Integer id) {
-        Optional<Mesa> m = mesaGestor.obtenerPorId(id);
-        if (m.isPresent()) {
-            Mesa mesa = m.get();
+    @PostMapping("/{id}/cuenta")
+    public ResponseEntity<?> pedirCuenta(@PathVariable Integer id) {
+        Optional<Mesa> mesaOpt = mesaRepo.findById(id);
+        if (mesaOpt.isPresent()) {
+            Mesa mesa = mesaOpt.get();
             mesa.setEstado("PIDIENDO_CUENTA");
-            return ResponseEntity.ok(mesaGestor.guardarMesa(mesa));
+            mesaRepo.save(mesa);
+            return ResponseEntity.ok().build();
         }
         return ResponseEntity.notFound().build();
-    }
-
-    // 2. Cliente llama al camarero
-    @PostMapping("/{id}/llamar-camarero")
-    public ResponseEntity<Mesa> llamarCamarero(@PathVariable Integer id) {
-        Optional<Mesa> m = mesaGestor.obtenerPorId(id);
-        if (m.isPresent()) {
-            Mesa mesa = m.get();
-            mesa.setEstado("AYUDA");
-            return ResponseEntity.ok(mesaGestor.guardarMesa(mesa));
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    // 3. Camarero atiende (Checkbox)
-    @PostMapping("/{id}/atender")
-    public ResponseEntity<Mesa> atenderNotificacion(@PathVariable Integer id) {
-        Optional<Mesa> m = mesaGestor.obtenerPorId(id);
-        if (m.isPresent()) {
-            Mesa mesa = m.get();
-            // Si está pidiendo ayuda o cuenta, lo devolvemos a estado normal (OCUPADA)
-            if (mesa.getEstado().equals("AYUDA") || mesa.getEstado().equals("PIDIENDO_CUENTA")) {
-                mesa.setEstado("OCUPADA");
-                return ResponseEntity.ok(mesaGestor.guardarMesa(mesa));
-            }
-        }
-        return ResponseEntity.ok().build();
     }
 }

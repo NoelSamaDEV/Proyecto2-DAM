@@ -4,63 +4,59 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// --- ESTADO ---
 const listaAvisosMesa = ref([])
 const listaPedidos = ref([])
 const cargando = ref(true)
 let intervalo = null
 
-// --- MEMORIA SIMPLE (ID Pedido -> Número de líneas) ---
 const memoriaCantidadLineas = ref(new Map())
 
-// --- SONIDO ---
 const reproducirSonido = () => {
   console.log("🔔 ¡DING! Novedades en cocina")
-  // const audio = new Audio('/assets/notification.mp3'); audio.play().catch(() => {});
 }
 
-// --- LÓGICA DE CARGA (POLLING) ---
 const cargarTodo = async () => {
   try {
-    // 1. CARGAR AVISOS SALA (Ayuda/Cuenta)
     const resMesas = await fetch('http://localhost:8080/api/mesas')
     if (resMesas.ok) {
       const todas = await resMesas.json()
       listaAvisosMesa.value = todas.filter(m => m.estado === 'AYUDA' || m.estado === 'PIDIENDO_CUENTA')
     }
 
-    // 2. CARGAR PEDIDOS COCINA
     const resPedidos = await fetch('http://localhost:8080/api/pedidos/pendientes')
     if (resPedidos.ok) {
-      const pedidosNuevos = await resPedidos.json()
+      const todosLosPedidos = await resPedidos.json()
+      
+      // NUEVO FILTRO: Solo mostramos en cocina los pedidos que tengan algún plato sin servir
+      const pedidosNuevos = todosLosPedidos.filter(p => 
+        p.lineasPedido && p.lineasPedido.some(linea => linea.servido === false)
+      )
+
       let hayNovedades = false
 
-      // Procesar cada pedido para ver si cambió
       const listaProcesada = pedidosNuevos.map(p => {
-        // Contamos cuántas líneas tiene este pedido ahora
-        const numLineasActual = p.lineasPedido.length
+        // ¡ARREGLO DEL PROBLEMA 2! 
+        // Sumamos la CANTIDAD total de platos sin servir, no el número de líneas
+        const cantidadTotalSinServir = p.lineasPedido
+            .filter(l => !l.servido)
+            .reduce((suma, l) => suma + l.cantidad, 0)
         
-        // Recuperamos cuántas tenía la última vez
-        const numLineasAnterior = memoriaCantidadLineas.value.get(p.idPedido)
+        const cantidadAnterior = memoriaCantidadLineas.value.get(p.idPedido)
 
-        // BANDERAS DE ESTADO
         p.etiqueta = "" 
         p.claseBorde = "borde-verde"
 
-        if (numLineasAnterior === undefined) {
-          // CASO 1: NO EXISTÍA -> ES NUEVO
+        if (cantidadAnterior === undefined) {
           p.etiqueta = "NUEVO PEDIDO"
           p.claseBorde = "borde-rojo animacion-parpadeo"
           hayNovedades = true
         } 
-        else if (numLineasActual > numLineasAnterior) {
-          // CASO 2: TIENE MÁS LÍNEAS QUE ANTES -> SE HA AÑADIDO ALGO
+        else if (cantidadTotalSinServir > cantidadAnterior) {
           p.etiqueta = "NUEVO PRODUCTO AÑADIDO"
           p.claseBorde = "borde-rojo animacion-parpadeo"
           hayNovedades = true
         }
         else {
-          // CASO 3: ESTÁ IGUAL (Mantenemos estado visual anterior si existía)
           const visualAnterior = listaPedidos.value.find(viejo => viejo.idPedido === p.idPedido)
           if (visualAnterior && visualAnterior.etiqueta) {
             p.etiqueta = visualAnterior.etiqueta
@@ -68,9 +64,7 @@ const cargarTodo = async () => {
           }
         }
 
-        // Actualizamos la memoria
-        memoriaCantidadLineas.value.set(p.idPedido, numLineasActual)
-        
+        memoriaCantidadLineas.value.set(p.idPedido, cantidadTotalSinServir)
         return p
       })
 
@@ -81,7 +75,6 @@ const cargarTodo = async () => {
   } catch (e) { console.error(e) } finally { cargando.value = false }
 }
 
-// --- ACCIONES ---
 const verMesa = (id) => { router.push(`/mesa/${id}`) }
 
 const atenderMesa = async (id) => {
@@ -90,14 +83,10 @@ const atenderMesa = async (id) => {
 }
 
 const atenderPedido = async (pedido) => {
-  // 1. Cerrar en Backend
-  if (pedido.mesa?.idMesa) {
-    await fetch(`http://localhost:8080/api/pedidos/mesa/${pedido.mesa.idMesa}/cerrar`, { method: 'POST' })
-  }
-  // 2. Borrar de Memoria Local
+  // ¡ARREGLO PARTE DEL PROBLEMA 1! Marcamos como servido en vez de cerrar la mesa
+  await fetch(`http://localhost:8080/api/pedidos/${pedido.idPedido}/marcar-servido`, { method: 'POST' })
   memoriaCantidadLineas.value.delete(pedido.idPedido)
-  // 3. Quitar visualmente
-  listaPedidos.value = listaPedidos.value.filter(p => p.idPedido !== pedido.idPedido)
+  cargarTodo()
 }
 
 onMounted(() => {
@@ -131,14 +120,13 @@ onUnmounted(() => clearInterval(intervalo))
           </div>
 
           <ul class="lista-items">
-            <li v-for="linea in [...pedido.lineasPedido].reverse()" :key="linea.idLinea">
+            <li v-for="linea in [...pedido.lineasPedido].reverse().filter(l => !l.servido)" :key="linea.idLinea">
                <strong>{{ linea.cantidad }}x</strong> 
                {{ linea.producto ? linea.producto.nombre : 'Producto' }}
             </li>
           </ul>
           
           <div class="footer-card">
-            <span class="precio">Total: {{ pedido.total }} €</span>
             <small class="id-pedido">#{{ pedido.idPedido }}</small>
           </div>
       </div>
@@ -150,7 +138,6 @@ onUnmounted(() => clearInterval(intervalo))
           </label>
       </div>
     </div>
-
 
     <div v-if="listaAvisosMesa.length > 0" class="seccion-titulo">🔔 Avisos de Sala</div>
     

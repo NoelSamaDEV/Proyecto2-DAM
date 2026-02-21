@@ -16,6 +16,10 @@ public class Categoria {
     @Column(name = "nombre")
     private String nombre;
 
+    // NUEVO: La foto de la categoría para el móvil
+    @Column(name = "imagen")
+    private String imagen;
+
     // RELACIÓN: Muchas categorías -> Un restaurante
     @ManyToOne
     @JoinColumn(name = "id_restaurante")

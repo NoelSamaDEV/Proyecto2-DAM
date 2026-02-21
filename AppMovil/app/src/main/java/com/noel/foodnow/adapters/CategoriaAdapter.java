@@ -42,7 +42,6 @@ public class CategoriaAdapter extends RecyclerView.Adapter<CategoriaAdapter.View
         Categoria item = listaCategorias.get(position);
         holder.txtNombre.setText(item.getNombre());
 
-        // --- MAGIA DE GLIDE ---
         // Intenta cargar la URL. Si falla o es null, pone el icono de galería por defecto.
         Glide.with(context)
                 .load(item.getImagenUrl())
