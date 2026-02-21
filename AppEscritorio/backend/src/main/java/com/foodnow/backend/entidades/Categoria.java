@@ -10,9 +10,9 @@ import lombok.Data;
 public class Categoria {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_categoria") // Como se llama en MySQL
-    @JsonProperty("idCategoria")   // Como se enviará en el JSON
-    private Integer idCategoria;   // Ya no se llama idMesa
+    @Column(name = "id_categoria")
+    @JsonProperty("idCategoria")
+    private Integer idCategoria;
 
     private String nombre;
     private String imagen;

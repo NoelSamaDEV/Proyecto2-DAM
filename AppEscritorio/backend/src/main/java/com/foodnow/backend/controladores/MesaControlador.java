@@ -30,16 +30,13 @@ public class MesaControlador {
         return mesaRepo.findAll();
     }
 
-    // NUEVO: Endpoint para que el móvil descargue el ticket actual
     @GetMapping("/{id}/ticket")
     public ResponseEntity<?> obtenerTicket(@PathVariable Integer id) {
-        // Buscamos el pedido que esté actualmente ABIERTO para esa mesa
         Optional<Pedido> pedidoOpt = pedidoRepo.findByMesa_IdMesaAndEstado(id, "ABIERTO");
 
         if (pedidoOpt.isPresent()) {
             Pedido pedido = pedidoOpt.get();
 
-            // Transformamos las líneas de pedido en el formato que entiende el móvil
             List<CuentaResponseDTO.LineaCuentaDTO> lineasDto = pedido.getLineasPedido().stream()
                     .map(linea -> new CuentaResponseDTO.LineaCuentaDTO(
                             linea.getCantidad(),
@@ -47,7 +44,6 @@ public class MesaControlador {
                             linea.getSubtotal()
                     )).collect(Collectors.toList());
 
-            // Calculamos el total (por si acaso el campo total del pedido no se actualizó)
             BigDecimal totalCalculado = pedido.getLineasPedido().stream()
                     .map(l -> l.getSubtotal())
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
