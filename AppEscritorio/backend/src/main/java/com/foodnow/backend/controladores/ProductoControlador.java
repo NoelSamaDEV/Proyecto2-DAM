@@ -1,57 +1,70 @@
 package com.foodnow.backend.controladores;
 
 import com.foodnow.backend.entidades.Producto;
-import com.foodnow.backend.gestores.ProductoGestor;
+import com.foodnow.backend.interfaces.ProductoInterfaz;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/productos")
-@CrossOrigin(origins = "*") // <--- IMPORTANTE: Permite acceso desde el móvil
+@CrossOrigin(origins = "*")
 public class ProductoControlador {
 
     @Autowired
-    private ProductoGestor productoGestor;
+    private ProductoInterfaz productoRepo;
 
+    // Obtener todos los productos
     @GetMapping
     public List<Producto> obtenerTodos() {
-        return productoGestor.obtenerTodos();
+        return productoRepo.findAll();
     }
 
+    // Obtener un producto por su ID
     @GetMapping("/{id}")
-    public Optional<Producto> obtenerPorId(@PathVariable Integer id) {
-        return productoGestor.obtenerPorId(id);
+    public ResponseEntity<Producto> obtenerPorId(@PathVariable Integer id) {
+        Optional<Producto> productoOpt = productoRepo.findById(id);
+        return productoOpt.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // --- NUEVO ENDPOINT PARA EL MÓVIL (Filtrar por categoría) ---
-    @GetMapping("/categoria/{id}")
-    public ResponseEntity<List<Producto>> obtenerProductosPorCategoria(@PathVariable Integer id) {
-
-        List<Producto> todos = productoGestor.obtenerTodos();
-        List<Producto> filtrados = new ArrayList<>();
-
-        for (Producto p : todos) {
-            // Comprueba si el producto tiene categoría, y si el ID coincide
-            if (p.getCategoria() != null && p.getCategoria().getIdCategoria().equals(id)) {
-                filtrados.add(p);
-            }
-        }
-
-        return ResponseEntity.ok(filtrados);
+    // Obtener productos filtrados por el ID de la categoría
+    @GetMapping("/categoria/{idCategoria}")
+    public List<Producto> obtenerPorCategoria(@PathVariable Integer idCategoria) {
+        return productoRepo.findAll().stream()
+                .filter(p -> p.getCategoria() != null && p.getCategoria().getIdCategoria().equals(idCategoria))
+                .collect(Collectors.toList());
     }
 
+    // Crear un nuevo producto
     @PostMapping
-    public Producto guardar(@RequestBody Producto producto) {
-        return productoGestor.guardarProducto(producto);
+    public Producto crear(@RequestBody Producto producto) {
+        return productoRepo.save(producto);
     }
 
+    // Actualizar un producto existente
+    @PutMapping("/{id}")
+    public ResponseEntity<Producto> actualizar(@PathVariable Integer id, @RequestBody Producto productoDetalles) {
+        return productoRepo.findById(id).map(producto -> {
+            producto.setNombre(productoDetalles.getNombre());
+            producto.setPrecio(productoDetalles.getPrecio());
+            producto.setImagen(productoDetalles.getImagen());
+            producto.setDescripcion(productoDetalles.getDescripcion());
+            producto.setCategoria(productoDetalles.getCategoria());
+            return ResponseEntity.ok(productoRepo.save(producto));
+        }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // Eliminar un producto
     @DeleteMapping("/{id}")
-    public void borrar(@PathVariable Integer id) {
-        productoGestor.borrarProducto(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
+        if (productoRepo.existsById(id)) {
+            productoRepo.deleteById(id);
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 }

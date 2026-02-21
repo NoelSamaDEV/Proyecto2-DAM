@@ -15,17 +15,16 @@ import java.util.List;
 
 public class CategoriaAdapter extends RecyclerView.Adapter<CategoriaAdapter.ViewHolder> {
 
-    private List<Categoria> listaCategorias;
+    private List<Categoria> categorias;
     private Context context;
-    private final OnItemClickListener listener;
+    private OnItemClickListener listener;
 
-    // Interfaz para saber cuándo hacen clic
     public interface OnItemClickListener {
         void onItemClick(Categoria categoria);
     }
 
-    public CategoriaAdapter(List<Categoria> lista, Context context, OnItemClickListener listener) {
-        this.listaCategorias = lista;
+    public CategoriaAdapter(List<Categoria> categorias, Context context, OnItemClickListener listener) {
+        this.categorias = categorias;
         this.context = context;
         this.listener = listener;
     }
@@ -39,29 +38,30 @@ public class CategoriaAdapter extends RecyclerView.Adapter<CategoriaAdapter.View
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Categoria item = listaCategorias.get(position);
+        Categoria item = categorias.get(position);
         holder.txtNombre.setText(item.getNombre());
 
-        // Intenta cargar la URL. Si falla o es null, pone el icono de galería por defecto.
+        // CORREGIDO: Ahora usa getImagen() para coincidir con el modelo
         Glide.with(context)
-                .load(item.getImagenUrl())
-                .placeholder(android.R.drawable.ic_menu_gallery)
-                .error(android.R.drawable.ic_menu_gallery)
-                .into(holder.imagen);
+                .load(item.getImagen())
+                .placeholder(R.drawable.logo)
+                .into(holder.imgCategoria);
 
         holder.itemView.setOnClickListener(v -> listener.onItemClick(item));
     }
 
     @Override
-    public int getItemCount() { return listaCategorias.size(); }
+    public int getItemCount() {
+        return categorias.size();
+    }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        ImageView imagen;
+        ImageView imgCategoria;
         TextView txtNombre;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            imagen = itemView.findViewById(R.id.imgCategoria);
+            imgCategoria = itemView.findViewById(R.id.imgCategoria);
             txtNombre = itemView.findViewById(R.id.txtNombreCategoria);
         }
     }

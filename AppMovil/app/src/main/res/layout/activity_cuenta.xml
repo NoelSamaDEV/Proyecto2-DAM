@@ -1,10 +1,110 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".CuentaActivity">
+    android:background="@color/fondo_gris">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <LinearLayout
+        android:id="@+id/headerCuenta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@color/verde_corporativo"
+        android:paddingTop="30dp"
+        android:paddingBottom="16dp"
+        android:paddingHorizontal="16dp"
+        android:gravity="center_vertical"
+        android:elevation="4dp">
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/logo"
+            android:layout_marginEnd="4dp"
+            android:contentDescription="Mini Logo" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="FoodNow"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@color/amarillo_wireframe"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/seccionTitulo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/headerCuenta"
+        android:background="@color/blanco"
+        android:paddingVertical="12dp"
+        android:paddingHorizontal="20dp"
+        android:elevation="2dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mi Cuenta"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/negro_texto"/>
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerCuenta"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/seccionTitulo"
+        android:layout_above="@id/bottomBarCuenta"
+        android:padding="8dp"
+        android:clipToPadding="false" />
+
+    <LinearLayout
+        android:id="@+id/bottomBarCuenta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical"
+        android:background="@color/blanco"
+        android:padding="20dp"
+        android:elevation="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Total consumido:"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/negro_texto"/>
+
+            <TextView
+                android:id="@+id/txtTotalCuenta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0.00 €"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="@color/verde_corporativo"/>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnPedirCuentaDefinitivo"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="PEDIR LA CUENTA AL CAMARERO"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:backgroundTint="@color/naranja_ayuda"
+            android:textColor="@color/blanco"/>
+    </LinearLayout>
+
+</RelativeLayout>

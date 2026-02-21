@@ -30,16 +30,17 @@ public class CuentaActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cuenta);
 
+        // Enlazamos con los IDs del XML
         recyclerCuenta = findViewById(R.id.recyclerCuenta);
         txtTotalCuenta = findViewById(R.id.txtTotalCuenta);
         btnPedirCuentaDefinitivo = findViewById(R.id.btnPedirCuentaDefinitivo);
 
         recyclerCuenta.setLayoutManager(new LinearLayoutManager(this));
 
-        // Descargar los datos del ticket al entrar a la pantalla
+        // Cargamos los datos
         obtenerTicketMesa();
 
-        // Configurar el botón de pedir cuenta definitivo
+        // Configurar el botón de pedir cuenta (avisar al camarero)
         btnPedirCuentaDefinitivo.setOnClickListener(v -> enviarAvisoCuenta());
     }
 
@@ -56,14 +57,14 @@ public class CuentaActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     CuentaResponse cuenta = response.body();
 
-                    // Rellenar la lista
-                    adapter = new CuentaAdapter(cuenta.getLineas());
-                    recyclerCuenta.setAdapter(adapter);
+                    if (cuenta.getLineas() != null) {
+                        adapter = new CuentaAdapter(cuenta.getLineas());
+                        recyclerCuenta.setAdapter(adapter);
+                    }
 
-                    // Poner el precio total
                     txtTotalCuenta.setText(String.format("%.2f €", cuenta.getTotal()));
                 } else {
-                    Toast.makeText(CuentaActivity.java, "Aún no has pedido nada", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(CuentaActivity.this, "Aún no has pedido nada", Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -79,14 +80,14 @@ public class CuentaActivity extends AppCompatActivity {
         if (idMesa == null) return;
 
         ApiService api = RetrofitClient.getClient().create(ApiService.class);
-        Call<Void> call = api.pedirCuenta(idMesa); // Esta llamada ya la tenemos programada en el backend!
+        Call<Void> call = api.pedirCuenta(idMesa);
 
         call.enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
                     Toast.makeText(CuentaActivity.this, "¡Camarero avisado! Enseguida te traen la cuenta.", Toast.LENGTH_LONG).show();
-                    finish(); // Cierra la pantalla
+                    finish();
                 }
             }
 
