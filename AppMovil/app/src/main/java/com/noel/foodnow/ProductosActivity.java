@@ -24,7 +24,7 @@ import retrofit2.Response;
 public class ProductosActivity extends AppCompatActivity {
 
     private RecyclerView recyclerProductos;
-    private TextView txtTituloFoodNow; // Es el título de la parte blanca
+    private TextView txtTituloFoodNow;
     private Button btnAyudaProductos;
     private Button btnCuentaProductos;
     private Button btnVerCarrito;

@@ -27,7 +27,7 @@ public class LineaPedido {
 
     @ManyToOne
     @JoinColumn(name = "id_pedido")
-    @JsonIgnoreProperties("lineasPedido") // Evita bucle infinito
+    @JsonIgnoreProperties("lineasPedido")
     private Pedido pedido;
 
     @ManyToOne

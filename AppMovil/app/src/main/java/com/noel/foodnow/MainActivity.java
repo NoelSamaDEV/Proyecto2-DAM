@@ -40,7 +40,6 @@ public class MainActivity extends AppCompatActivity {
             if (result.getContents() == null) {
                 Toast.makeText(this, "Escaneo cancelado", Toast.LENGTH_LONG).show();
             } else {
-                // Supongamos que el QR contiene el ID de la mesa directamente (ej: "1")
                 try {
                     String mesaIdStr = result.getContents();
                     // Si el QR es una URL (ej: foodnow.app/mesa/1), extraemos el final

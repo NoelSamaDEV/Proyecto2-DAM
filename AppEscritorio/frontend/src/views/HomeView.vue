@@ -20,10 +20,10 @@ const cargarMesas = async () => {
 
 // --- CREAR NUEVA MESA ---
 const crearMesa = async () => {
-  // Pedimos el número al usuario de forma sencilla
+  // Pedir el número al usuario de forma sencilla
   const numero = prompt("Introduce el NÚMERO de la nueva mesa:")
   
-  // Si cancela o no escribe nada, paramos
+  // Si cancela o no escribe nada, parar la creación
   if (!numero) return
 
   try {

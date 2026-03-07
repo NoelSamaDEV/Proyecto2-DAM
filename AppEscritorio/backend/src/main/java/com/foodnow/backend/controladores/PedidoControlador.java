@@ -92,7 +92,6 @@ public class PedidoControlador {
         Producto producto = productoRepo.findById(solicitud.idProducto).orElse(null);
         if (producto != null) {
 
-            // 🛠️ LA MAGIA ESTÁ AQUÍ: Buscamos si ya hay una línea de este producto... pero SOLO SI AÚN NO SE HA SERVIDO
             Optional<LineaPedido> lineaExistente = pedido.getLineasPedido().stream()
                     .filter(l -> l.getProducto().getIdProducto().equals(producto.getIdProducto()) && !l.getServido())
                     .findFirst();
@@ -114,7 +113,7 @@ public class PedidoControlador {
                 nueva.setSubtotal(producto.getPrecio().multiply(new BigDecimal(solicitud.cantidad)));
                 nueva.setServido(false);
                 lineaRepo.saveAndFlush(nueva);
-                pedido.getLineasPedido().add(nueva); // Lo añadimos a la lista en memoria
+                pedido.getLineasPedido().add(nueva);
             }
 
             BigDecimal totalCalculado = lineaRepo.calcularTotalPedido(pedido.getIdPedido());
