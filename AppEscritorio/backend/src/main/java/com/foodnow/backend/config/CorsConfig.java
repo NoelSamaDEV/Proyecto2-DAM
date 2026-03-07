@@ -15,7 +15,7 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 // Permite el acceso desde el entorno de desarrollo de Vite/Electron
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:5173")
+                        .allowedOrigins("*")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
             }
         };

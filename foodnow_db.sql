@@ -2,12 +2,18 @@
 SET SQL_SAFE_UPDATES = 0;
 SET FOREIGN_KEY_CHECKS = 0; 
 
--- 1. REINICIO TOTAL DE LA BASE DE DATOS
-DROP DATABASE IF EXISTS foodnow_db;
-CREATE DATABASE foodnow_db;
-USE foodnow_db;
+-- USAMOS LA BASE DE DATOS QUE NOS DA RAILWAY
+USE railway;
 
--- 2. CREACIÓN DE TABLAS (Ajustadas para la App Móvil)
+-- 1. LIMPIEZA DE TABLAS EXISTENTES (Para evitar errores si ya existen)
+DROP TABLE IF EXISTS linea_pedido;
+DROP TABLE IF EXISTS pedido;
+DROP TABLE IF EXISTS producto;
+DROP TABLE IF EXISTS categoria;
+DROP TABLE IF EXISTS mesa;
+DROP TABLE IF EXISTS restaurante;
+
+-- 2. CREACIÓN DE TABLAS
 CREATE TABLE restaurante (
     id_restaurante INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
@@ -72,16 +78,15 @@ CREATE TABLE linea_pedido (
 INSERT INTO restaurante (nombre, direccion, telefono, email) 
 VALUES ('FoodNow Burger', 'Calle Principal 123', '910000000', 'info@foodnow.com');
 
--- Categorías (Con iconos)
+-- Categorías
 INSERT INTO categoria (nombre, imagen, id_restaurante) VALUES 
 ('Hamburguesas', 'https://cdn-icons-png.flaticon.com/512/3075/3075977.png', 1),
 ('Entrantes', 'https://cdn-icons-png.flaticon.com/512/3480/3480823.png', 1),
 ('Bebidas', 'https://cdn-icons-png.flaticon.com/512/2738/2738730.png', 1),
 ('Postres', 'https://cdn-icons-png.flaticon.com/512/3173/3173420.png', 1);
 
--- Productos (8 por categoría con imágenes funcionales de Unsplash)
+-- Productos
 INSERT INTO producto (nombre, descripcion, precio, imagen, id_restaurante, id_categoria) VALUES 
--- 🍔 CATEGORÍA 1: HAMBURGUESAS
 ('Burger Clásica', 'Carne de vacuno 100%, queso cheddar, lechuga y tomate.', 9.50, 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80', 1, 1),
 ('Bacon Cheeseburger', 'Doble ración de bacon crujiente, queso fundido y salsa BBQ.', 11.00, 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=500&q=80', 1, 1),
 ('Burger BBQ', 'Doble carne, aros de cebolla, bacon y salsa barbacoa.', 12.50, 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=500&q=80', 1, 1),
@@ -90,8 +95,6 @@ INSERT INTO producto (nombre, descripcion, precio, imagen, id_restaurante, id_ca
 ('Truffle Burger', 'Carne de vacuno, queso trufado, setas y rúcula.', 13.00, 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=500&q=80', 1, 1),
 ('Smash Burger', 'Doble carne aplastada, doble cheddar y pan brioche.', 10.50, 'https://images.unsplash.com/photo-1608767221051-2b9d18f35a2f?w=500&q=80', 1, 1),
 ('Spicy Burger', 'Carne, jalapeños, salsa picante y queso Monterrey Jack.', 11.50, 'https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=500&q=80', 1, 1),
-
--- 🍟 CATEGORÍA 2: ENTRANTES
 ('Patatas Fritas', 'Ración grande de patatas crujientes.', 3.50, 'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=500&q=80', 1, 2),
 ('Nachos con Queso', 'Nachos bañados en queso fundido, guacamole y jalapeños.', 7.00, 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=500&q=80', 1, 2),
 ('Alitas BBQ', '6 alitas de pollo bañadas en salsa barbacoa.', 6.50, 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=500&q=80', 1, 2),
@@ -100,8 +103,6 @@ INSERT INTO producto (nombre, descripcion, precio, imagen, id_restaurante, id_ca
 ('Fingers de Pollo', 'Tiras de pollo empanado con salsa mostaza miel.', 5.50, 'https://images.unsplash.com/photo-1562967914-01efa7e87832?w=500&q=80', 1, 2),
 ('Ensalada César', 'Lechuga romana, pollo asado, picatostes y salsa César.', 7.50, 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=500&q=80', 1, 2),
 ('Patatas Bravas', 'Patatas en dados con nuestra salsa brava casera.', 4.00, 'https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?w=500&q=80', 1, 2),
-
--- 🥤 CATEGORÍA 3: BEBIDAS
 ('Coca-Cola', 'Lata de 33cl bien fría.', 2.50, 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&q=80', 1, 3),
 ('Agua Mineral', 'Botella de agua de 50cl.', 1.50, 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=500&q=80', 1, 3),
 ('Cerveza Artesana', 'Cerveza rubia de barril.', 3.00, 'https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=500&q=80', 1, 3),
@@ -110,8 +111,6 @@ INSERT INTO producto (nombre, descripcion, precio, imagen, id_restaurante, id_ca
 ('Zumo de Naranja', 'Zumo natural recién exprimido.', 3.50, 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=500&q=80', 1, 3),
 ('Limonada Casera', 'Limonada fresca con menta.', 3.00, 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500&q=80', 1, 3),
 ('Vino Tinto', 'Copa de vino tinto de la casa.', 3.50, 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=500&q=80', 1, 3),
-
--- 🍰 CATEGORÍA 4: POSTRES
 ('Tarta de Queso', 'Cheesecake casero con coulis de frutos rojos.', 5.50, 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=500&q=80', 1, 4),
 ('Brownie de Chocolate', 'Brownie caliente con nueces y bola de helado.', 6.00, 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=500&q=80', 1, 4),
 ('Flan de Caramelo', 'Flan casero tradicional bañado en suave caramelo líquido.', 5.50, 'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=500&q=80', 1, 4),
@@ -127,5 +126,5 @@ INSERT INTO mesa (numero_mesa, estado, qr_code, id_restaurante) VALUES
 (3, 'LIBRE', 'https://foodnow.app/mesa/3', 1),
 (4, 'LIBRE', 'https://foodnow.app/mesa/4', 1);
 
--- Reactivamos las claves foráneas
+-- 4. FINALIZACIÓN
 SET FOREIGN_KEY_CHECKS = 1;
