@@ -37,7 +37,7 @@ const toggleLinea = async (linea) => {
 
   // 2. Le avisamos a la base de datos
   try {
-    await fetch(`http://localhost:8080/api/pedidos/linea/${linea.idLinea}/estado-servido`, {
+    await fetch(`https://proyecto2-dam-production.up.railway.app/api/pedidos/linea/${linea.idLinea}/estado-servido`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ servido: nuevoEstado })
@@ -52,10 +52,10 @@ const cargarDatos = async () => {
   if (!mesa.value) cargando.value = true
   
   try {
-    const resMesa = await fetch(`http://localhost:8080/api/mesas/${idMesa}`)
+    const resMesa = await fetch(`https://proyecto2-dam-production.up.railway.app/api/mesas/${idMesa}`)
     if (resMesa.ok) mesa.value = await resMesa.json()
     
-    const resPedido = await fetch(`http://localhost:8080/api/pedidos/mesa/${idMesa}/actual`)
+    const resPedido = await fetch(`https://proyecto2-dam-production.up.railway.app/api/pedidos/mesa/${idMesa}/actual`)
     if (resPedido.ok) {
       pedidoActual.value = await resPedido.json()
       
@@ -77,7 +77,7 @@ const cargarDatos = async () => {
 // --- LÓGICA NOTIFICACIONES (Atender Ayuda/Cuenta) ---
 const realizarAccion = async (e) => {
     setTimeout(async () => {
-        await fetch(`http://localhost:8080/api/mesas/${idMesa}/atender`, { method: 'POST' })
+        await fetch(`https://proyecto2-dam-production.up.railway.app/api/mesas/${idMesa}/atender`, { method: 'POST' })
         cargarDatos()
         e.target.checked = false
     }, 500)
@@ -86,7 +86,7 @@ const realizarAccion = async (e) => {
 // --- ACCIONES DE MESA ---
 const vaciarMesa = async () => {
   if (!confirm("¿Cobrar y liberar mesa?")) return
-  await fetch(`http://localhost:8080/api/mesas/${idMesa}/liberar`, { method: 'POST' })
+  await fetch(`https://proyecto2-dam-production.up.railway.app/api/mesas/${idMesa}/liberar`, { method: 'POST' })
   cargarDatos()
 }
 

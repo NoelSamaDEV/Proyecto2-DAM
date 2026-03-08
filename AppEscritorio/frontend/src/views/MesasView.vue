@@ -17,7 +17,7 @@ const nombreMesaQR = ref('')
 const cargarMesas = async () => {
   console.log("🔄 Intentando cargar mesas...")
   try {
-    const res = await fetch('http://localhost:8080/api/mesas')
+    const res = await fetch('https://proyecto2-dam-production.up.railway.app/api/mesas')
     if (res.ok) {
       mesas.value = await res.json()
       console.log("✅ Mesas cargadas:", mesas.value.length)
@@ -37,25 +37,25 @@ const forzarRecarga = () => {
 
 // 3. CREAR MESA
 const crearMesa = async () => {
-  console.log("➕ Botón crear pulsado. Valor input:", nuevaMesaNumero.value)
-  
   if (!nuevaMesaNumero.value || nuevaMesaNumero.value.trim() === '') {
-    alert("⚠️ Por favor, escribe un número en el recuadro 'Nº'")
+    alert("⚠️ Por favor, escribe un número")
     return
   }
 
   try {
-    const res = await fetch('http://localhost:8080/api/mesas', {
+    const res = await fetch('https://proyecto2-dam-production.up.railway.app/api/mesas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ numeroMesa: nuevaMesaNumero.value, estado: 'LIBRE' })
     })
     
     if (res.ok) {
-      nuevaMesaNumero.value = ''
+      nuevaMesaNumero.value = '' // Se limpia si tiene éxito
       cargarMesas()
     } else {
-      alert("❌ Error: Esa mesa ya existe.")
+      // Si falla (ej: duplicada), avisamos pero limpiamos el campo para que puedas reintentar
+      alert("❌ Error: Esa mesa ya existe en la base de datos.")
+      nuevaMesaNumero.value = '' 
     }
   } catch (e) { 
     console.error(e)
@@ -68,7 +68,7 @@ const borrarMesa = async (id, numero) => {
   if (!confirm(`¿Eliminar la Mesa ${numero}?`)) return
 
   try {
-    const res = await fetch(`http://localhost:8080/api/mesas/${id}`, { method: 'DELETE' })
+    const res = await fetch(`https://proyecto2-dam-production.up.railway.app/api/mesas/${id}`, { method: 'DELETE' })
     if (res.ok) cargarMesas()
     else alert("No se puede borrar (tiene pedidos activos).")
   } catch (e) { console.error(e) }

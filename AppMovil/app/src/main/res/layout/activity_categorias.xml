@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:background="@color/verde_corporativo"
-        android:paddingTop="30dp"
+        android:paddingTop="50dp"
         android:paddingBottom="16dp"
         android:paddingHorizontal="16dp"
         android:gravity="center_vertical"

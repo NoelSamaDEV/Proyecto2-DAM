@@ -17,13 +17,13 @@ const reproducirSonido = () => {
 
 const cargarTodo = async () => {
   try {
-    const resMesas = await fetch('http://localhost:8080/api/mesas')
+    const resMesas = await fetch('https://proyecto2-dam-production.up.railway.app/api/mesas')
     if (resMesas.ok) {
       const todas = await resMesas.json()
       listaAvisosMesa.value = todas.filter(m => m.estado === 'AYUDA' || m.estado === 'PIDIENDO_CUENTA')
     }
 
-    const resPedidos = await fetch('http://localhost:8080/api/pedidos/pendientes')
+    const resPedidos = await fetch('https://proyecto2-dam-production.up.railway.app/api/pedidos/pendientes')
     if (resPedidos.ok) {
       const todosLosPedidos = await resPedidos.json()
       
@@ -78,13 +78,13 @@ const cargarTodo = async () => {
 const verMesa = (id) => { router.push(`/mesa/${id}`) }
 
 const atenderMesa = async (id) => {
-  await fetch(`http://localhost:8080/api/mesas/${id}/atender`, { method: 'POST' })
+  await fetch(`https://proyecto2-dam-production.up.railway.app/api/mesas/${id}/atender`, { method: 'POST' })
   cargarTodo()
 }
 
 const atenderPedido = async (pedido) => {
   // ¡ARREGLO PARTE DEL PROBLEMA 1! Marcamos como servido en vez de cerrar la mesa
-  await fetch(`http://localhost:8080/api/pedidos/${pedido.idPedido}/marcar-servido`, { method: 'POST' })
+  await fetch(`https://proyecto2-dam-production.up.railway.app/api/pedidos/${pedido.idPedido}/marcar-servido`, { method: 'POST' })
   memoriaCantidadLineas.value.delete(pedido.idPedido)
   cargarTodo()
 }

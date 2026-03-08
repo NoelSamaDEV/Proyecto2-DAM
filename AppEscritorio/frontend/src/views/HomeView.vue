@@ -9,7 +9,7 @@ let intervalo = null
 // --- CARGAR MESAS ---
 const cargarMesas = async () => {
   try {
-    const res = await fetch('http://localhost:8080/api/mesas')
+    const res = await fetch('https://proyecto2-dam-production.up.railway.app/api/mesas')
     if (res.ok) {
       mesas.value = await res.json()
     }
@@ -27,7 +27,7 @@ const crearMesa = async () => {
   if (!numero) return
 
   try {
-    const res = await fetch('http://localhost:8080/api/mesas', {
+    const res = await fetch('https://proyecto2-dam-production.up.railway.app/api/mesas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

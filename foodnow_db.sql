@@ -128,3 +128,5 @@ INSERT INTO mesa (numero_mesa, estado, qr_code, id_restaurante) VALUES
 
 -- 4. FINALIZACIÓN
 SET FOREIGN_KEY_CHECKS = 1;
+
+SELECT * FROM railway.mesa;
