@@ -5,7 +5,7 @@ import ModalQR from '../components/ModalQR.vue'
 
 const router = useRouter()
 const mesas = ref([])
-const nuevaMesaNumero = ref('')
+// Hemos eliminado la referencia al número manual
 let intervalo = null
 
 // VARIABLES MODAL QR
@@ -31,31 +31,22 @@ const cargarMesas = async () => {
 
 // 2. BOTÓN DE REFRESCAR MANUAL
 const forzarRecarga = () => {
-    // alert("Refrescando datos...")
     cargarMesas()
 }
 
-// 3. CREAR MESA
+// 3. CREAR MESA (Ahora automática)
 const crearMesa = async () => {
-  if (!nuevaMesaNumero.value || nuevaMesaNumero.value.trim() === '') {
-    alert("⚠️ Por favor, escribe un número")
-    return
-  }
-
   try {
     const res = await fetch('https://proyecto2-dam-production.up.railway.app/api/mesas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ numeroMesa: nuevaMesaNumero.value, estado: 'LIBRE' })
+      body: JSON.stringify({}) // Enviamos objeto vacío, el Backend calcula el número
     })
     
     if (res.ok) {
-      nuevaMesaNumero.value = '' // Se limpia si tiene éxito
       cargarMesas()
     } else {
-      // Si falla (ej: duplicada), avisamos pero limpiamos el campo para que puedas reintentar
-      alert("❌ Error: Esa mesa ya existe en la base de datos.")
-      nuevaMesaNumero.value = '' 
+      alert("❌ Error al crear la mesa automática en el servidor.")
     }
   } catch (e) { 
     console.error(e)
@@ -87,7 +78,6 @@ const irAMesa = (id) => {
 
 onMounted(() => {
   cargarMesas()
-  // intervalo = setInterval(cargarMesas, 5000)
 })
 
 onUnmounted(() => {
@@ -102,15 +92,8 @@ onUnmounted(() => {
       <h1>Panel de Sala</h1>
       
       <div class="acciones-top">
-        <input 
-            type="text" 
-            v-model="nuevaMesaNumero" 
-            placeholder="Nº" 
-            class="input-numero" 
-        />
-        
         <button class="btn-crear" @click="crearMesa">
-           <span>+</span> Crear
+            <span>+</span> Crear Mesa
         </button>
 
         <button class="btn-refresh" @click="forzarRecarga" title="Actualizar lista">
@@ -153,9 +136,9 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* ESTILOS EXACTOS SIN TOCAR NADA */
 .home-container { padding: 20px; font-family: 'Segoe UI', sans-serif; }
 
-/* PANEL SUPERIOR */
 .top-panel {
   background: white; padding: 15px 30px; border-radius: 12px;
   display: flex; justify-content: space-between; align-items: center;
@@ -167,20 +150,6 @@ onUnmounted(() => {
 h1 { margin: 0; font-size: 1.8rem; font-weight: bold; color: #000; }
 
 .acciones-top { display: flex; gap: 10px; align-items: center; }
-
-/* INPUT REFORZADO */
-.input-numero {
-  width: 60px;
-  padding: 10px;
-  border: 2px solid #ddd;
-  border-radius: 6px;
-  text-align: center;
-  font-size: 1.1rem;
-  background: white;
-  color: black;
-  cursor: text;
-}
-.input-numero:focus { border-color: #223E2A; outline: none; }
 
 .btn-crear {
   background-color: #223E2A; color: white; border: none; padding: 10px 20px;
@@ -195,10 +164,8 @@ h1 { margin: 0; font-size: 1.8rem; font-weight: bold; color: #000; }
 }
 .btn-refresh:active { background-color: #eee; }
 
-/* GRID */
 .grid-mesas { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; z-index: 1; }
 
-/* TARJETA */
 .card-mesa {
   background: white; border-radius: 15px; padding: 20px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column;
@@ -210,7 +177,6 @@ h1 { margin: 0; font-size: 1.8rem; font-weight: bold; color: #000; }
 .icon-circle { width: 50px; height: 50px; background-color: #E0E0E0; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; }
 .info-mesa h3 { margin: 0 0 5px 0; font-size: 1.1rem; color: #333; font-weight: 800; }
 
-/* BADGES */
 .badge { font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
 .libre { background-color: #E8F5E9; color: #2E7D32; }
 .ocupada { background-color: #FFEBEE; color: #C62828; }

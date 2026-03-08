@@ -30,6 +30,42 @@ public class MesaControlador {
         return mesaRepo.findAll();
     }
 
+    /**
+     * NUEVO: Crea una mesa automáticamente calculando el siguiente número.
+     * Recibe un body vacío {} desde el frontend.
+     */
+    @PostMapping
+    public Mesa crearMesaAutomatica(@RequestBody Mesa mesaData) {
+        List<Mesa> todas = mesaRepo.findAll();
+
+        // Calculamos el número más alto actual
+        int maxNumero = todas.stream()
+                .mapToInt(Mesa::getNumeroMesa)
+                .max()
+                .orElse(0);
+
+        Mesa nuevaMesa = new Mesa();
+        nuevaMesa.setNumeroMesa(maxNumero + 1);
+        nuevaMesa.setEstado("LIBRE");
+        // Generamos el QR apuntando a tu backend de Railway
+        nuevaMesa.setQrCode("https://proyecto2-dam-production.up.railway.app/mesa/" + (maxNumero + 1));
+
+        return mesaRepo.save(nuevaMesa);
+    }
+
+    /**
+     * NUEVO: Elimina una mesa por ID.
+     * Gracias al ON DELETE CASCADE en la DB, se borrarán sus pedidos automáticamente.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminarMesa(@PathVariable Integer id) {
+        if (mesaRepo.existsById(id)) {
+            mesaRepo.deleteById(id);
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
     @GetMapping("/{id}/ticket")
     public ResponseEntity<?> obtenerTicket(@PathVariable Integer id) {
         Optional<Pedido> pedidoOpt = pedidoRepo.findByMesa_IdMesaAndEstado(id, "ABIERTO");
