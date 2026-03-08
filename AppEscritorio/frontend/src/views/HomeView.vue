@@ -20,30 +20,22 @@ const cargarMesas = async () => {
 
 // --- CREAR NUEVA MESA ---
 const crearMesa = async () => {
-  // Pedir el número al usuario de forma sencilla
-  const numero = prompt("Introduce el NÚMERO de la nueva mesa:")
-  
-  // Si cancela o no escribe nada, parar la creación
-  if (!numero) return
-
   try {
+    // No validamos nuevaMesaNumero porque ya no existe el input
     const res = await fetch('https://proyecto2-dam-production.up.railway.app/api/mesas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-          numeroMesa: numero,
-          estado: 'LIBRE'
-      })
+      body: JSON.stringify({}) // Cuerpo vacío, el backend hace el trabajo
     })
-
+    
     if (res.ok) {
-      cargarMesas()
+      await cargarMesas()
     } else {
-      alert("Error: Quizás esa mesa ya existe.")
+      alert("Error al crear la mesa en el servidor.")
     }
-  } catch (e) {
+  } catch (e) { 
     console.error(e)
-    alert("Error de conexión al crear mesa")
+    alert("Error de conexión. Revisa que el backend esté arriba.")
   }
 }
 

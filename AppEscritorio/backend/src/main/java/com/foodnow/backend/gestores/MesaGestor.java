@@ -11,37 +11,45 @@ import java.util.Optional;
 public class MesaGestor {
 
     @Autowired
-    private MesaInterfaz mesaInterfaz; // Usamos tu nombre real de la interfaz
+    private MesaInterfaz mesaInterfaz;
 
     public List<Mesa> listarTodo() {
         return mesaInterfaz.findAll();
     }
 
-    public Optional<Mesa> buscarPorId(Long id) {
+    // Cambiado de Long a Integer para que coincida con tu entidad
+    public Optional<Mesa> buscarPorId(Integer id) {
+        return mesaInterfaz.findById(id);
+    }
+
+    // Este método es el que pedía PedidoGestor
+    public Optional<Mesa> obtenerPorId(Integer id) {
         return mesaInterfaz.findById(id);
     }
 
     public Mesa guardar(Mesa mesa) {
-        // Si el id es null, significa que es una mesa nueva pulsada desde el botón
+        // Lógica de autocalcular número si es nueva
         if (mesa.getIdMesa() == null) {
             List<Mesa> todas = mesaInterfaz.findAll();
-
-            // Buscamos el número de mesa más alto actual
             int maxNumero = todas.stream()
                     .mapToInt(Mesa::getNumeroMesa)
                     .max()
                     .orElse(0);
 
-            // Asignamos el siguiente número automáticamente
             mesa.setNumeroMesa(maxNumero + 1);
             mesa.setEstado("LIBRE");
-            // Generamos el QR con el nuevo número
             mesa.setQrCode("https://proyecto2-dam-production.up.railway.app/mesa/" + (maxNumero + 1));
         }
         return mesaInterfaz.save(mesa);
     }
 
-    public void eliminar(Long id) {
+    // Este método es el que pedía PedidoGestor
+    public Mesa guardarMesa(Mesa mesa) {
+        return mesaInterfaz.save(mesa);
+    }
+
+    // Cambiado de Long a Integer
+    public void eliminar(Integer id) {
         mesaInterfaz.deleteById(id);
     }
 }

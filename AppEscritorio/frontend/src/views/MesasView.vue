@@ -37,20 +37,21 @@ const forzarRecarga = () => {
 // 3. CREAR MESA (Ahora automática)
 const crearMesa = async () => {
   try {
+    // No validamos nuevaMesaNumero porque ya no existe el input
     const res = await fetch('https://proyecto2-dam-production.up.railway.app/api/mesas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}) // Enviamos objeto vacío, el Backend calcula el número
+      body: JSON.stringify({}) // Cuerpo vacío, el backend hace el trabajo
     })
     
     if (res.ok) {
-      cargarMesas()
+      await cargarMesas()
     } else {
-      alert("❌ Error al crear la mesa automática en el servidor.")
+      alert("Error al crear la mesa en el servidor.")
     }
   } catch (e) { 
     console.error(e)
-    alert("Error de conexión al crear")
+    alert("Error de conexión. Revisa que el backend esté arriba.")
   }
 }
 
